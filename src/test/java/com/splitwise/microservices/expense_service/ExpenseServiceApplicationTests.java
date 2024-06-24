@@ -1,4 +1,4 @@
-package com.splitwise.Expense_Service;
+package com.splitwise.microservices.expense_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
