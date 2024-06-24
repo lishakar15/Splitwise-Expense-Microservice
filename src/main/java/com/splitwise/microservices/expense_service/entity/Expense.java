@@ -35,4 +35,8 @@ public class Expense {
     @Column(name = "last_updated")
     private Date lastUpdateDate;
 
+    private String category;
+
+    private Enum splitType;
+
 }
