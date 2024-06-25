@@ -1,5 +1,6 @@
 package com.splitwise.microservices.expense_service.model;
 
+import com.splitwise.microservices.expense_service.enums.SplitType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,5 +23,5 @@ public class ExpenseRequest {
     private Date lastUpdateDate;
     private String category;
     private List<UserExpenseSplit> userExpenseSplitList;
-    private Enum splitType;
+    //private Enum<SplitType> splitType;
 }
