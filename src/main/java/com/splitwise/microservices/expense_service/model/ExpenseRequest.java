@@ -23,5 +23,5 @@ public class ExpenseRequest {
     private Date lastUpdateDate;
     private String category;
     private List<UserExpenseSplit> userExpenseSplitList;
-    //private Enum<SplitType> splitType;
+    private String splitType;
 }

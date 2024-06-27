@@ -21,14 +21,7 @@ public class Transaction {
 
     @Id
     private Long transactionId;
-    @Column(name = "payer_id")
-    private Long payerId;
-    @Column(name = "payee_id")
-    private Long payeeId;
-    @Column(name = "amount_paid")
-    private Double amountPaid;
-    @Column(name = "expense_desc")
-    private String expenseDescription;
+
     @Column(name = "user_comments")
     private String userComments;
     @Column(name = "transaction_date")

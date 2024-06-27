@@ -50,13 +50,19 @@ public class ExpenseParticipantService {
         int deletedRows = deleteExpenseParticipants(expenseId);
         if(deletedRows > 0)
         {
-        List<ExpenseParticipant> participantsList =
-                expenseParticipantMapper.getExpenseParticipantsFromExpenseRequest(expenseRequest,
-                expenseId);
-
-            for(ExpenseParticipant expenseParticipant : participantsList)
+            List<ExpenseParticipant> participantsList =
+                    expenseParticipantMapper.getExpenseParticipantsFromExpenseRequest(expenseRequest,
+                    expenseId);
+            if(participantsList != null && !participantsList.isEmpty())
             {
-                expenseParticipantRepository.save(expenseParticipant);
+                for(ExpenseParticipant expenseParticipant : participantsList)
+                {
+                    expenseParticipantRepository.save(expenseParticipant);
+                }
+            }
+            else
+            {
+                throw new ExpenseException("Unable to perform update");
             }
         }
         else

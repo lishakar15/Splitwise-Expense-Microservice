@@ -20,7 +20,7 @@ public class ExpenseParticipantMapper {
             //Need to throw exception
             return null;
         }
-        for(UserExpenseSplit expenseSplit :expenseRequest.getUserExpenseSplitList())
+        for(UserExpenseSplit expenseSplit : expenseRequest.getUserExpenseSplitList())
         {
             ExpenseParticipant participant = ExpenseParticipant.builder().expenseId(expenseId)
                     .participantId(expenseSplit.getUserId())
