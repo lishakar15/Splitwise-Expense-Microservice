@@ -20,6 +20,8 @@ public class Comments {
     private Long commentId;
     @Column(name ="settlement_id")
     private Long settlementId;
+    @Column(name ="expense_id")
+    private Long expenseId;
     @Column(name ="commented_by")
     private Long commentedBy;
     @Column(name ="comment")
