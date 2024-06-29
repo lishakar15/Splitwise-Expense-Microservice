@@ -9,25 +9,28 @@ class MultipayerSplitAlgorithm {
     public static void main(String[] args) {
         Map<Long,Map<Long,Double>> balanceSheet = new HashMap<>();
         MultipayerSplitAlgorithm multipayerSplitAlgorithm = new MultipayerSplitAlgorithm();
-        Participant ep1 = multipayerSplitAlgorithm.new Participant(101L, 10.00, true); // Lisha Splits
-        Participant ep2 = multipayerSplitAlgorithm.new Participant(102L, 80.00, true); // Sovan Splits
-        Participant ep3 = multipayerSplitAlgorithm.new Participant(103L, 10.00, false); // Ankur Splits
+        Participant ep1 = multipayerSplitAlgorithm.new Participant(101L, 25.00, true); // Lisha Splits
+        Participant ep2 = multipayerSplitAlgorithm.new Participant(102L, 35.00, true); // Sovan Splits
+        Participant ep3 = multipayerSplitAlgorithm.new Participant(103L, 40.00, true); // Ankur Splits
+        Participant ep4 = multipayerSplitAlgorithm.new Participant(104L, 60.00, true); // Jack Splits
         List<Participant> participantsList = new ArrayList<>();
         participantsList.add(ep1);
         participantsList.add(ep2);
         participantsList.add(ep3);
+        participantsList.add(ep4);
 
         //Calculated the actual payer balances
         Map<Long,Double> payerBalanceMap = new HashMap<>();
-        payerBalanceMap.put(101L,30.00); //Lisha gets 30.00
-        payerBalanceMap.put(102L,-20.00); //Sovon gives 20.00
+        payerBalanceMap.put(101L,30.00);
+        payerBalanceMap.put(102L,-50.00);
+        payerBalanceMap.put(103L, 30.00);
+        payerBalanceMap.put(104L, -10.00);
 
         for(Participant participant : participantsList)
         {
             if(!participant.isPayer())
             {
                 Double participantAmount = participant.getSettlementAmount();
-                System.out.println(" You need to pay "+participant.getParticipantId());
                 for(Map.Entry<Long,Double> payerMapEntry: payerBalanceMap.entrySet())
                 {
 
@@ -70,17 +73,28 @@ class MultipayerSplitAlgorithm {
                                 balanceSheet.put(payerId,participantMap);
                                 payerMapEntry.setValue(payerAmount - payeeAmount);
                             }
-                            else if(payerAmount > 0 && payerAmount < payeeAmount)
+                            else if(payerAmount > 0 && payerAmount <= payeeAmount)
                             {
                                 participantMap.put(participantId,payerAmount);
                                 balanceSheet.put(payerId,participantMap);
-                                payerMapEntry.setValue(0.0); // Exit the loop as the amount is settled.
                                 payerBalanceMap.put(participantId,(payerBalanceMap.get(participantId) + payerAmount)); //Updating remaining amount
+                                payerMapEntry.setValue(0.0); // Exit the loop as the amount is settled.
                             }
                         }
             }
         }
     }
+        for (Map.Entry<Long,Map<Long,Double>> balanceEntry : balanceSheet.entrySet())
+        {
+            Long getter = balanceEntry.getKey();
+            for(Map.Entry<Long,Double> giverEntry : balanceEntry.getValue().entrySet())
+            {
+                Long giver = giverEntry.getKey();
+                Double giverAmount = giverEntry.getValue();
+                System.out.println(giver +" owes "+giverAmount+" to "+getter);
+            }
+
+        }
 }
 
     class Participant {
