@@ -1,9 +1,7 @@
 package com.splitwise.microservices.expense_service.controller;
 
 import com.splitwise.microservices.expense_service.entity.Expense;
-import com.splitwise.microservices.expense_service.entity.ExpenseParticipant;
 import com.splitwise.microservices.expense_service.exception.ExpenseException;
-import com.splitwise.microservices.expense_service.mapper.ExpenseMapper;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
 import com.splitwise.microservices.expense_service.service.ExpenseParticipantService;
 import com.splitwise.microservices.expense_service.service.ExpenseService;
@@ -12,9 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.lang.annotation.Repeatable;
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/expense")

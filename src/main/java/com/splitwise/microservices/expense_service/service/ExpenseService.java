@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class ExpenseService {
@@ -47,9 +48,9 @@ public class ExpenseService {
         Map<Long, Map<Long, Double>> balanceMap = calculateParticipantsBalance(expenseRequest);
         if(balanceMap != null)
         {
-            for(Map.Entry<Long,Map<Long,Double>> mapEntry :balanceMap.entrySet())
+            for(Map.Entry<Long,Map<Long,Double>> mapEntry : balanceMap.entrySet())
             {
-                Long paidUseId = mapEntry.getKey();
+                Long paidUserId = mapEntry.getKey();
                 Map<Long,Double> participantsMap = mapEntry.getValue();
                 if(participantsMap != null)
                 {
@@ -57,10 +58,18 @@ public class ExpenseService {
                     {
                         Long participantId = participantEntry.getKey();
                         Double amountOwes = participantEntry.getValue();
+                        //Check if there is any past pending balance
+                        Optional<Double> optional = balanceRepository.getPastBalanceOfParticipant(paidUserId,
+                            participantId);
+                        if(optional.isPresent())
+                        {
+                            //Add current balance with past balance
+                            amountOwes = amountOwes +optional.get();
+                        }
                         Balance balance = Balance.builder()
                                 .groupId(groupId)
                                 .userId(participantId)
-                                .owesTo(paidUseId)
+                                .owesTo(paidUserId)
                                 .balanceAmount(amountOwes)
                                 .build();
                         balanceRepository.save(balance);
