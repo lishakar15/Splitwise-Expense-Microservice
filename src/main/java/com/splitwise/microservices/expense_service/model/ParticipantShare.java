@@ -13,6 +13,6 @@ public class ParticipantShare {
 
     private Long userId;
     private Double shareAmount;
-    private boolean isPayer;
+    private Boolean isPayer;
 
 }

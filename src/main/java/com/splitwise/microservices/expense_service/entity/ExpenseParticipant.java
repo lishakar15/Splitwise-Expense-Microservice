@@ -25,5 +25,5 @@ public class ExpenseParticipant {
     @Column(name = "settle_amount")
     private Double settlementAmount;
     @Column(name = "is_payer")
-    private boolean isPayer;
+    private Boolean isPayer;
 }

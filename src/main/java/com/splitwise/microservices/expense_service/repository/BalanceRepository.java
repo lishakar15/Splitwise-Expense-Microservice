@@ -11,7 +11,7 @@ import java.util.Optional;
 @Repository
 public interface BalanceRepository extends JpaRepository<Balance,Long> {
 
-    @Query(value = "select b.balance_amount from Balance b where user_id =:paidUserId and owes_to_user =:participantId")
+    @Query(value = "select b.balanceId from Balance b where userId =:paidUserId and owesTo =:participantId")
     public Optional<Double> getPastBalanceOfParticipant(@Param("paidUserId") Long paidUserId, @Param("participantId")Long participantId);
 
 }

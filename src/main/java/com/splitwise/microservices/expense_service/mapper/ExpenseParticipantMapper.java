@@ -20,12 +20,13 @@ public class ExpenseParticipantMapper {
             //Need to throw exception
             return null;
         }
-        for(ParticipantShare expenseSplit : expenseRequest.getParticipantShareList())
+        for(ParticipantShare participantShare : expenseRequest.getParticipantShareList())
         {
-            ExpenseParticipant participant = ExpenseParticipant.builder().expenseId(expenseId)
-                    .participantId(expenseSplit.getUserId())
-                    .settlementAmount(expenseSplit.getShareAmount())
-                    .isPayer(expenseSplit.isPayer())
+            ExpenseParticipant participant = ExpenseParticipant.builder()
+                    .expenseId(expenseId)
+                    .participantId(participantShare.getUserId())
+                    .settlementAmount(participantShare.getShareAmount())
+                    .isPayer(participantShare.getIsPayer())
                     .build();
             participantList.add(participant);
         }

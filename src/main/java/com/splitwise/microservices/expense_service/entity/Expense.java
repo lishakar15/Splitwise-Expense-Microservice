@@ -1,5 +1,6 @@
 package com.splitwise.microservices.expense_service.entity;
 
+import com.splitwise.microservices.expense_service.enums.SplitType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,7 +35,7 @@ public class Expense {
     private Date lastUpdateDate;
 
     private String category;
-
-    private Enum splitType;
+    @Enumerated(EnumType.STRING)
+    private SplitType splitType;
 
 }

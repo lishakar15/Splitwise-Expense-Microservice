@@ -31,15 +31,21 @@ public class ExpenseService {
 
     public Expense saveExpenseFromRequest(ExpenseRequest expenseRequest) {
         Expense expenseObj = expenseMapper.getExpenseFromRequest(expenseRequest);
+        Expense savedExpense = null;
         if(expenseObj != null)
         {
-            List<PaidUser> paidUsers = expenseRequest.getPaidUsers();
-            for(PaidUser paidUser : paidUsers)
+            savedExpense = expenseRepository.save(expenseObj);
+            if(savedExpense != null)
             {
-                paidUserRepository.save(paidUser);
+                List<PaidUser> paidUsers = expenseRequest.getPaidUsers();
+                for(PaidUser paidUser : paidUsers)
+                {
+                    paidUser.setExpenseId(savedExpense.getExpenseId());
+                    paidUserRepository.save(paidUser);
+                }
             }
         }
-       return expenseRepository.save(expenseObj);
+       return savedExpense;
     }
 
     public void saveParticipantsBalance(ExpenseRequest expenseRequest)
