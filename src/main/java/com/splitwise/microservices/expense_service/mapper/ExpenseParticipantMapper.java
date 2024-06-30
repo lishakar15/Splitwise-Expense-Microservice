@@ -2,7 +2,7 @@ package com.splitwise.microservices.expense_service.mapper;
 
 import com.splitwise.microservices.expense_service.entity.ExpenseParticipant;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
-import com.splitwise.microservices.expense_service.model.UserExpenseSplit;
+import com.splitwise.microservices.expense_service.model.ParticipantShare;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -20,11 +20,11 @@ public class ExpenseParticipantMapper {
             //Need to throw exception
             return null;
         }
-        for(UserExpenseSplit expenseSplit : expenseRequest.getUserExpenseSplitList())
+        for(ParticipantShare expenseSplit : expenseRequest.getParticipantShareList())
         {
             ExpenseParticipant participant = ExpenseParticipant.builder().expenseId(expenseId)
                     .participantId(expenseSplit.getUserId())
-                    .settlementAmount(expenseSplit.getSplitAmount())
+                    .settlementAmount(expenseSplit.getShareAmount())
                     .isPayer(expenseSplit.isPayer())
                     .build();
             participantList.add(participant);

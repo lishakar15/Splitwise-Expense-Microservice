@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.lang.annotation.Repeatable;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/expense")
@@ -36,14 +37,14 @@ public class ExpenseController {
             boolean isParticipantsSaved = expenseParticipantService.saveExpenseParticipantsFromRequest(expenseRequest,
                     savedExpense.getExpenseId());
 
-            if(!isParticipantsSaved)
+            if(isParticipantsSaved)
             {
-                return new ResponseEntity<>("Error occurred while saving Expense details",HttpStatus.INTERNAL_SERVER_ERROR);
+                //Calculate and save individual balances users owe
+                expenseService.saveParticipantsBalance(expenseRequest);
             }
             else
             {
-                //Calculate individual balances they owe to others
-
+                return new ResponseEntity<>("Error occurred while saving Expense details",HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
         return new ResponseEntity<>("Expense added successfully!",HttpStatus.OK);

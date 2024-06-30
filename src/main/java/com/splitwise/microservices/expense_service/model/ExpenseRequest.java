@@ -22,6 +22,6 @@ public class ExpenseRequest {
     private Date createDate;
     private Date lastUpdateDate;
     private String category;
-    private List<UserExpenseSplit> userExpenseSplitList;
+    private List<ParticipantShare> participantShareList;
     private String splitType;
 }

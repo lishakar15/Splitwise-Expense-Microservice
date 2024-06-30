@@ -9,10 +9,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UserExpenseSplit {
+public class ParticipantShare {
 
     private Long userId;
-    private Double splitAmount;
+    private Double shareAmount;
     private boolean isPayer;
 
 }

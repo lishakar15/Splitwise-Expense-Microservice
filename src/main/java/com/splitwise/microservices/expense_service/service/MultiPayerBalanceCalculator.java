@@ -1,13 +1,17 @@
 package com.splitwise.microservices.expense_service.service;
 
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
-import org.springframework.stereotype.Service;
 
-@Service
+import java.util.HashMap;
+import java.util.Map;
+
 public class MultiPayerBalanceCalculator implements BalanceCalculator{
 
     @Override
-    public void calculateBalance(ExpenseRequest expenseRequest) {
+    public Map<Long, Map<Long, Double>> calculateBalance(ExpenseRequest expenseRequest) {
+        Map<Long,Map<Long,Double>> balanceMap = new HashMap<>();
 
+        //Todo: Perform multi payer calculation
+        return balanceMap;
     }
 }
