@@ -1,6 +1,6 @@
 package com.splitwise.microservices.expense_service.model;
 
-import com.splitwise.microservices.expense_service.enums.SplitType;
+import com.splitwise.microservices.expense_service.entity.PaidUser;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +15,7 @@ import java.util.List;
 @Builder
 public class ExpenseRequest {
     private Long groupId;
-    private Long paidBy;
+    private List<PaidUser> paidUsers;
     private Double totalAmount;
     private String expenseDescription;
     private Date spentOnDate;

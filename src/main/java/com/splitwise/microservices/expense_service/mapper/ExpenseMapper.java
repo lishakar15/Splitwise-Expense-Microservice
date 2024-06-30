@@ -1,15 +1,18 @@
 package com.splitwise.microservices.expense_service.mapper;
 
 import com.splitwise.microservices.expense_service.entity.Expense;
+import com.splitwise.microservices.expense_service.entity.PaidUser;
 import com.splitwise.microservices.expense_service.enums.SplitType;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 
 @Component
 public class ExpenseMapper {
 
-    public Expense getExpenseFromExpenseRequest(ExpenseRequest expenseRequest)
+    public Expense getExpenseFromRequest(ExpenseRequest expenseRequest)
     {
         if(expenseRequest == null )
         {
@@ -18,7 +21,6 @@ public class ExpenseMapper {
         }
         Expense expense = Expense.builder().expenseDescription(expenseRequest.getExpenseDescription())
                 .groupId(expenseRequest.getGroupId())
-                .paidBy(expenseRequest.getPaidBy())
                 .totalAmount(expenseRequest.getTotalAmount())
                 .category(expenseRequest.getCategory())
                 .spentOnDate(expenseRequest.getSpentOnDate())

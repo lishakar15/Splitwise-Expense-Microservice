@@ -22,8 +22,6 @@ public class Expense {
     private Long expenseId;
     @Column(name="group_id")
     private Long groupId;
-    @Column(name ="paid_by_user")
-    private Long paidBy;
     @Column(name = "total_amount")
     private Double totalAmount;
     @Column(name = "expense_desc")

@@ -35,9 +35,15 @@ public class ExpenseController {
         {
             boolean isParticipantsSaved = expenseParticipantService.saveExpenseParticipantsFromRequest(expenseRequest,
                     savedExpense.getExpenseId());
+
             if(!isParticipantsSaved)
             {
                 return new ResponseEntity<>("Error occurred while saving Expense details",HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            else
+            {
+                //Calculate individual balances they owe to others
+
             }
         }
         return new ResponseEntity<>("Expense added successfully!",HttpStatus.OK);
