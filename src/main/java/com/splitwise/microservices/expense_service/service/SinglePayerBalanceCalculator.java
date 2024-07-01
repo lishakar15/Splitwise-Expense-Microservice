@@ -18,7 +18,7 @@ public class SinglePayerBalanceCalculator implements BalanceCalculator{
         List<ParticipantShare> participantShares = expenseRequest.getParticipantShareList();
         for(ParticipantShare participantShare : participantShares)
         {
-            if(!participantShare.getIsPayer())
+            if(!participantShare.getIsPaidUser())
             {
                 balanceMap.putIfAbsent(paidUserId,new HashMap<>());
                 balanceMap.get(paidUserId).put(participantShare.getUserId(),

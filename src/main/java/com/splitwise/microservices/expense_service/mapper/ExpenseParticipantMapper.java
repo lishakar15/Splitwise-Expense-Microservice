@@ -26,7 +26,7 @@ public class ExpenseParticipantMapper {
                     .expenseId(expenseId)
                     .participantId(participantShare.getUserId())
                     .settlementAmount(participantShare.getShareAmount())
-                    .isPayer(participantShare.getIsPayer())
+                    .isPayer(participantShare.getIsPaidUser())
                     .build();
             participantList.add(participant);
         }

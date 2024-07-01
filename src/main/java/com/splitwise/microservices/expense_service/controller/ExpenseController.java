@@ -28,24 +28,16 @@ public class ExpenseController {
         {
            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        Expense savedExpense = expenseService.saveExpenseFromRequest(expenseRequest);
-        if(savedExpense != null)
+        try
         {
-            boolean isParticipantsSaved = expenseParticipantService.saveExpenseParticipantsFromRequest(expenseRequest,
-                    savedExpense.getExpenseId());
-
-            if(isParticipantsSaved)
-            {
-                //Todo: Add validation for total amount equals to payers sum
-                //Calculate and save individual balances users owe
-                expenseService.saveParticipantsBalance(expenseRequest);
-            }
-            else
-            {
-                return new ResponseEntity<>("Error occurred while saving Expense details",HttpStatus.INTERNAL_SERVER_ERROR);
-            }
+            expenseService.saveExpenseAndParticipantDetails(expenseRequest);
+            return new ResponseEntity<>("Expense added successfully!", HttpStatus.OK);
         }
-        return new ResponseEntity<>("Expense added successfully!",HttpStatus.OK);
+        catch(Exception ex)
+        {
+            return new ResponseEntity<>("Error occurred while saving Expense details", HttpStatus.INTERNAL_SERVER_ERROR);
+
+        }
     }
 
     @PutMapping("/update-expense")

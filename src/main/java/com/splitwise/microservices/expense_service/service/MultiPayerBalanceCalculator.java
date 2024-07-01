@@ -21,56 +21,56 @@ public class MultiPayerBalanceCalculator implements BalanceCalculator{
         Map<Long, Double> paidUsersActualOweAmountMap = getPaidUsersOweAmountMap(expenseRequest);
         for(ParticipantShare participant : participantShareList)
         {
-            if(!participant.getIsPayer())
+            if(!participant.getIsPaidUser())
             {
-                Double participantAmount = participant.getShareAmount();
+                Double participantOweAmount = participant.getShareAmount();
                 for(Map.Entry<Long,Double> paidUserOweMapEntry: paidUsersActualOweAmountMap.entrySet())
                 {
 
-                    Long payerId = paidUserOweMapEntry.getKey();
-                    Double payerAmount = paidUserOweMapEntry.getValue();
-                    if(payerAmount > 0 && payerAmount > participantAmount)
+                    Long paidUserId = paidUserOweMapEntry.getKey();
+                    Double paidUserOweAmount = paidUserOweMapEntry.getValue();
+                    if(paidUserOweAmount > 0 && paidUserOweAmount > participantOweAmount)
                     {
-                        balanceMap.putIfAbsent(payerId,new HashMap<>());
-                        Map<Long, Double> participantMap = balanceMap.get(payerId);
-                        participantMap.put(participant.getUserId(),Math.abs(participantAmount));
-                        balanceMap.put(payerId,participantMap);
-                        paidUserOweMapEntry.setValue(payerAmount - participantAmount);
+                        balanceMap.putIfAbsent(paidUserId,new HashMap<>());
+                        Map<Long, Double> participantMap = balanceMap.get(paidUserId);
+                        participantMap.put(participant.getUserId(),Math.abs(participantOweAmount));
+                        balanceMap.put(paidUserId,participantMap);
+                        paidUserOweMapEntry.setValue(paidUserOweAmount - participantOweAmount);
                         //return;
                     }
-                    else if(payerAmount> 0 && payerAmount <= participantAmount)
+                    else if(paidUserOweAmount> 0 && paidUserOweAmount <= participantOweAmount)
                     {
-                        balanceMap.putIfAbsent(payerId,new HashMap<>());
-                        Map<Long, Double> participantMap = balanceMap.get(payerId);
-                        participantMap.put(participant.getUserId(),payerAmount);
-                        balanceMap.put(payerId,participantMap);
-                        paidUserOweMapEntry.setValue(0.0); // Exit the loop as the amount is settled.
+                        balanceMap.putIfAbsent(paidUserId,new HashMap<>());
+                        Map<Long, Double> participantMap = balanceMap.get(paidUserId);
+                        participantMap.put(participant.getUserId(),paidUserOweAmount);
+                        balanceMap.put(paidUserId,participantMap);
+                        paidUserOweMapEntry.setValue(0.0); // Todo: Exit the loop as the amount is settled.
                         //participantAmount = participantAmount +payerAmount;//wrong
                     }
                 }
             }
-            else if(participant.getIsPayer() && paidUsersActualOweAmountMap.get(participant.getUserId())<0.00)
+            else if(participant.getIsPaidUser() && paidUsersActualOweAmountMap.get(participant.getUserId())<0.00)
             {
                 for(Map.Entry<Long,Double> payerMapEntry: paidUsersActualOweAmountMap.entrySet()) {
                     Long payerId = payerMapEntry.getKey();
                     Long participantId = participant.getUserId();
-                    Double payerAmount = payerMapEntry.getValue();
-                    Double payeeAmount = Math.abs(paidUsersActualOweAmountMap.get(participant.getUserId()));
+                    Double paidUserOweAmount = payerMapEntry.getValue();
+                    Double participantOweAmount = Math.abs(paidUsersActualOweAmountMap.get(participant.getUserId()));
                     if(payerId != participantId)
                     {
                         balanceMap.putIfAbsent(payerId,new HashMap<>());
                         Map<Long, Double> participantMap = balanceMap.get(payerId);
-                        if(payerAmount > 0 && payerAmount > payeeAmount)
+                        if(paidUserOweAmount > 0 && paidUserOweAmount > participantOweAmount)
                         {
-                            participantMap.put(participantId,payeeAmount);
+                            participantMap.put(participantId,participantOweAmount);
                             balanceMap.put(payerId,participantMap);
-                            payerMapEntry.setValue(payerAmount - payeeAmount);
+                            payerMapEntry.setValue(paidUserOweAmount - participantOweAmount);
                         }
-                        else if(payerAmount > 0 && payerAmount <= payeeAmount)
+                        else if(paidUserOweAmount > 0 && paidUserOweAmount <= participantOweAmount)
                         {
-                            participantMap.put(participantId,payerAmount);
+                            participantMap.put(participantId,paidUserOweAmount);
                             balanceMap.put(payerId,participantMap);
-                            paidUsersActualOweAmountMap.put(participantId,(paidUsersActualOweAmountMap.get(participantId) + payerAmount)); //Updating remaining amount
+                            paidUsersActualOweAmountMap.put(participantId,(paidUsersActualOweAmountMap.get(participantId) + paidUserOweAmount)); //Updating remaining amount
                             payerMapEntry.setValue(0.0); // Exit the loop as the amount is settled.
                         }
                     }

@@ -10,6 +10,7 @@ import com.splitwise.microservices.expense_service.repository.ExpenseRepository;
 import com.splitwise.microservices.expense_service.repository.PaidUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,8 @@ import java.util.Optional;
 @Service
 public class ExpenseService {
 
+    @Autowired
+    ExpenseParticipantService expenseParticipantService;
     @Autowired
     ExpenseRepository expenseRepository;
     @Autowired
@@ -92,15 +95,40 @@ public class ExpenseService {
         if(expenseRequest != null && expenseRequest.getPaidUsers().size()>1)
         {
             balanceCalculator = new MultiPayerBalanceCalculator();
-            balanceCalculator.calculateBalance(expenseRequest);
         }
         else
         {
             balanceCalculator = new SinglePayerBalanceCalculator();
-            balanceMap = balanceCalculator.calculateBalance(expenseRequest);
         }
-        return balanceMap;
+        return balanceCalculator.calculateBalance(expenseRequest);
     }
 
+    /**
+     * This method handles saving Expense and related details
+     * @param expenseRequest
+     */
+    @Transactional
+    public void saveExpenseAndParticipantDetails(ExpenseRequest expenseRequest) {
+        Expense savedExpense = saveExpenseFromRequest(expenseRequest);
+        if(savedExpense != null)
+        {
+            boolean isParticipantsSaved = expenseParticipantService.saveExpenseParticipantsFromRequest(expenseRequest,
+                    savedExpense.getExpenseId());
 
+            if(isParticipantsSaved)
+            {
+                //Todo: Add validation for total amount equals to payers sum (On request)
+                //Calculate and save individual balances users owe
+                saveParticipantsBalance(expenseRequest);
+            }
+            else
+            {
+                throw new RuntimeException("Error occurred while saving Expense");
+            }
+        }
+        else
+        {
+            throw new RuntimeException("Error occurred while saving Expense");
+        }
+    }
 }
