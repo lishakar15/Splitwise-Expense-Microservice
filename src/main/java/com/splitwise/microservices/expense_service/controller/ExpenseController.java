@@ -22,6 +22,8 @@ public class ExpenseController {
     @PostMapping("/add-expense")
     public ResponseEntity<String> addNewExpense(@RequestBody ExpenseRequest expenseRequest)
     {
+        //Todo: Add validation for total amount equals to payers sum
+        //Create a validation method for request validation
         if(expenseRequest == null)
         {
            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -34,6 +36,7 @@ public class ExpenseController {
 
             if(isParticipantsSaved)
             {
+                //Todo: Add validation for total amount equals to payers sum
                 //Calculate and save individual balances users owe
                 expenseService.saveParticipantsBalance(expenseRequest);
             }
