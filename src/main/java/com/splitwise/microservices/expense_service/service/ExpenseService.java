@@ -101,6 +101,11 @@ public class ExpenseService {
                                              .build();
                                      balanceRepository.save(balance);
                                  }
+                                 else if(updatedAmount == 0 )
+                                 {
+                                     //balance settled
+                                     balanceRepository.deleteByBalanceId(existingBalance.getBalanceId());
+                                 }
                             }
                             else
                             {
