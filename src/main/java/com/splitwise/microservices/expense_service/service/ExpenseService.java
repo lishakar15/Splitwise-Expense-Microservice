@@ -3,6 +3,8 @@ package com.splitwise.microservices.expense_service.service;
 import com.splitwise.microservices.expense_service.entity.Balance;
 import com.splitwise.microservices.expense_service.entity.Expense;
 import com.splitwise.microservices.expense_service.entity.PaidUser;
+import com.splitwise.microservices.expense_service.enums.SplitType;
+import com.splitwise.microservices.expense_service.exception.ExpenseException;
 import com.splitwise.microservices.expense_service.mapper.ExpenseMapper;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
 import com.splitwise.microservices.expense_service.repository.BalanceRepository;
@@ -49,6 +51,18 @@ public class ExpenseService {
             }
         }
        return savedExpense;
+    }
+    public void updateExpenseAndParticipantsFromRequest(ExpenseRequest expenseRequest) throws ExpenseException {
+        if(expenseRequest == null)
+        {
+            throw new RuntimeException("Request cannot be null");
+        }
+        Long expenseId = expenseRequest.getExpenseId();
+        Expense updateExpense = expenseMapper.getExpenseFromRequest(expenseRequest);
+        updateExpense.setExpenseId(expenseId);
+
+        expenseRepository.save(updateExpense);
+        expenseParticipantService.updateParticipantsExpense(expenseRequest,expenseId);
     }
 
     public void saveParticipantsBalance(ExpenseRequest expenseRequest)
@@ -167,4 +181,5 @@ public class ExpenseService {
             throw new RuntimeException("Error occurred while saving Expense");
         }
     }
+
 }

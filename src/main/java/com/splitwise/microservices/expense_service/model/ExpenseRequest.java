@@ -15,6 +15,7 @@ import java.util.List;
 @Builder
 public class ExpenseRequest {
     private Long groupId;
+    private Long expenseId;
     private List<PaidUser> paidUsers;
     private Double totalAmount;
     private String expenseDescription;

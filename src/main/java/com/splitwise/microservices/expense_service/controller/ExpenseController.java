@@ -50,11 +50,7 @@ public class ExpenseController {
         }
         try
         {
-            Expense savedExpense = expenseService.saveExpenseFromRequest(expenseRequest);
-            if(savedExpense != null)
-            {
-                expenseParticipantService.updateParticipantsExpense(expenseRequest,savedExpense.getExpenseId());
-            }
+            expenseService.updateExpenseAndParticipantsFromRequest(expenseRequest);
         }
         catch(ExpenseException ex)
         {
@@ -62,11 +58,10 @@ public class ExpenseController {
         }
         catch(Exception ex)
         {
-            System.out.println("Error occurred while updating participant expenses "+ ex.getMessage());
             return new ResponseEntity<>("Error occurred while updating participant expenses",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>("Expense saved successfully!",HttpStatus.OK);
+        return new ResponseEntity<>("Expense updated successfully!",HttpStatus.OK);
     }
 
     }
