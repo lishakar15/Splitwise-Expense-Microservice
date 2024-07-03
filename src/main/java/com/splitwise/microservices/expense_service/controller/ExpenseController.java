@@ -64,6 +64,16 @@ public class ExpenseController {
         return new ResponseEntity<>("Expense updated successfully!",HttpStatus.OK);
     }
 
+    @DeleteMapping("delete-expense/{expenseId}")
+    public void deleteExpense(@PathVariable("expenseId") Long expenseId)
+    {
+        //Todo delete expense
+        //delete participants
+        //delete paid users
+        //delete associated balances
+
+    }
+
     }
 
 
