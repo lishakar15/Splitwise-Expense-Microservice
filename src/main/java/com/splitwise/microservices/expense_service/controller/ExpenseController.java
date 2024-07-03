@@ -35,6 +35,7 @@ public class ExpenseController {
         }
         catch(Exception ex)
         {
+            System.out.println("Error occurred while saving Expense details "+ ex.getMessage());
             return new ResponseEntity<>("Error occurred while saving Expense details", HttpStatus.INTERNAL_SERVER_ERROR);
 
         }
@@ -61,6 +62,7 @@ public class ExpenseController {
         }
         catch(Exception ex)
         {
+            System.out.println("Error occurred while updating participant expenses "+ ex.getMessage());
             return new ResponseEntity<>("Error occurred while updating participant expenses",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }

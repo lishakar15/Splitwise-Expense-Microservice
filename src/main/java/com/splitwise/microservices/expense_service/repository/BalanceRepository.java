@@ -6,12 +6,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
 
 @Repository
 public interface BalanceRepository extends JpaRepository<Balance,Long> {
 
-    @Query(value = "select b.balanceId from Balance b where userId =:paidUserId and owesTo =:participantId")
-    public Optional<Double> getPastBalanceOfParticipant(@Param("paidUserId") Long paidUserId, @Param("participantId")Long participantId);
+    @Query(value = "select b from Balance b where b.userId =:participantId and b.owesTo =:paidUserId")
+    public Balance getPastBalanceOfParticipant(@Param("paidUserId") Long paidUserId,
+                                         @Param("participantId")Long participantId);
+
+    public void deleteByBalanceId(Long balanceId);
 
 }

@@ -68,20 +68,51 @@ public class ExpenseService {
                         Long participantId = participantEntry.getKey();
                         Double amountOwes = participantEntry.getValue();
                         //Check if there is any past pending balance
-                        Optional<Double> optional = balanceRepository.getPastBalanceOfParticipant(paidUserId,
+                        Balance existingBalance = balanceRepository.getPastBalanceOfParticipant(paidUserId,
                             participantId);
-                        if(optional.isPresent())
+                        if(existingBalance != null)
                         {
-                            //Add current balance with past balance
-                            amountOwes = amountOwes +optional.get();
+                            //Update existing balance
+                            amountOwes = amountOwes + existingBalance.getBalanceAmount();
+                            existingBalance.setBalanceAmount(amountOwes);
+                            balanceRepository.save(existingBalance);
                         }
-                        Balance balance = Balance.builder()
-                                .groupId(groupId)
-                                .userId(participantId)
-                                .owesTo(paidUserId)
-                                .balanceAmount(amountOwes)
-                                .build();
-                        balanceRepository.save(balance);
+                        else
+                        {
+                            //Check if paid user owes any amount to participant in the past
+                            existingBalance = balanceRepository.getPastBalanceOfParticipant(participantId,
+                                    paidUserId);
+                            if(existingBalance != null)
+                            {
+                                //reduce balances
+                                 Double updatedAmount = existingBalance.getBalanceAmount() - amountOwes;
+                                 if(updatedAmount > 0)
+                                 {
+                                     existingBalance.setBalanceAmount(updatedAmount);
+                                     balanceRepository.save(existingBalance);
+                                 }
+                                 else if(updatedAmount<0){
+                                     balanceRepository.deleteByBalanceId(existingBalance.getBalanceId());
+                                     Balance balance = Balance.builder()
+                                             .groupId(groupId)
+                                             .userId(participantId)
+                                             .owesTo(paidUserId)
+                                             .balanceAmount(Math.abs(updatedAmount))
+                                             .build();
+                                     balanceRepository.save(balance);
+                                 }
+                            }
+                            else
+                            {
+                                Balance balance = Balance.builder()
+                                        .groupId(groupId)
+                                        .userId(participantId)
+                                        .owesTo(paidUserId)
+                                        .balanceAmount(amountOwes)
+                                        .build();
+                                balanceRepository.save(balance);
+                            }
+                        }
                     }
                 }
             }
