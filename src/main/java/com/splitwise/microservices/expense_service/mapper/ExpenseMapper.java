@@ -1,12 +1,10 @@
 package com.splitwise.microservices.expense_service.mapper;
 
 import com.splitwise.microservices.expense_service.entity.Expense;
-import com.splitwise.microservices.expense_service.entity.PaidUser;
 import com.splitwise.microservices.expense_service.enums.SplitType;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 
 
 @Component

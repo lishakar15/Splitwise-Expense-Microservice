@@ -45,6 +45,11 @@ public class ExpenseParticipantService {
         return isSaved;
     }
 
+    public List<ExpenseParticipant> getParticipantsByExpenseId(Long expenseId)
+    {
+        return expenseParticipantRepository.findByExpenseId(expenseId);
+    }
+
     public void updateParticipantsExpense(ExpenseRequest expenseRequest,Long expenseId) throws ExpenseException{
         //Delete existing participants and save the new list
         int deletedRows = deleteExpenseParticipants(expenseId);
@@ -75,4 +80,5 @@ public class ExpenseParticipantService {
     {
         return expenseParticipantRepository.deleteByExpenseId(expenseId);
     }
+
 }

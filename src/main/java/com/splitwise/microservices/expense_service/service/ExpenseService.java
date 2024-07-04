@@ -2,18 +2,20 @@ package com.splitwise.microservices.expense_service.service;
 
 import com.splitwise.microservices.expense_service.entity.Balance;
 import com.splitwise.microservices.expense_service.entity.Expense;
+import com.splitwise.microservices.expense_service.entity.ExpenseParticipant;
 import com.splitwise.microservices.expense_service.entity.PaidUser;
-import com.splitwise.microservices.expense_service.enums.SplitType;
 import com.splitwise.microservices.expense_service.exception.ExpenseException;
 import com.splitwise.microservices.expense_service.mapper.ExpenseMapper;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
 import com.splitwise.microservices.expense_service.repository.BalanceRepository;
 import com.splitwise.microservices.expense_service.repository.ExpenseRepository;
 import com.splitwise.microservices.expense_service.repository.PaidUserRepository;
+import org.hibernate.dialect.function.array.ArrayContainsUnnestFunction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,6 +54,34 @@ public class ExpenseService {
         }
        return savedExpense;
     }
+    /**
+     * This method handles saving Expense and related details
+     * @param expenseRequest
+     */
+    @Transactional
+    public void saveExpenseAndParticipantDetails(ExpenseRequest expenseRequest) {
+        Expense savedExpense = saveExpenseFromRequest(expenseRequest);
+        if(savedExpense != null)
+        {
+            boolean isParticipantsSaved = expenseParticipantService.saveExpenseParticipantsFromRequest(expenseRequest,
+                    savedExpense.getExpenseId());
+
+            if(isParticipantsSaved)
+            {
+                //Todo: Add validation for total amount equals to payers sum (On request)
+                //Calculate and save individual balances users owe
+                saveParticipantsBalance(expenseRequest);
+            }
+            else
+            {
+                throw new RuntimeException("Error occurred while saving Expense");
+            }
+        }
+        else
+        {
+            throw new RuntimeException("Error occurred while saving Expense");
+        }
+    }
     public void updateExpenseAndParticipantsFromRequest(ExpenseRequest expenseRequest) throws ExpenseException {
         if(expenseRequest == null)
         {
@@ -64,11 +94,49 @@ public class ExpenseService {
         expenseRepository.save(updateExpense);
         expenseParticipantService.updateParticipantsExpense(expenseRequest,expenseId);
     }
-
     public void saveParticipantsBalance(ExpenseRequest expenseRequest)
     {
+        if(expenseRequest == null)
+        {
+            throw new RuntimeException("Request cannot be null");
+        }
+        Map<Long, Map<Long, Double>> balanceMap = calculateParticipantsBalance(expenseRequest);
+        saveParticipantsBalance(balanceMap,expenseRequest.getGroupId());
+    }
+    /**
+     * This method undo the balance calculation of an expense before update/delete request
+     * @param expenseRequest
+     */
+    public void reCalculateBalanceForDeleteExpense(ExpenseRequest expenseRequest)
+    {
+        if(expenseRequest == null)
+        {
+            throw new RuntimeException("Request cannot be null");
+        }
         Long groupId = expenseRequest.getGroupId();
         Map<Long, Map<Long, Double>> balanceMap = calculateParticipantsBalance(expenseRequest);
+        Map<Long,Map<Long,Double>> reverseBalanceMap = new HashMap<>();
+        if(balanceMap != null)
+        {
+            for(Map.Entry<Long,Map<Long,Double>> mapEntry : balanceMap.entrySet())
+            {
+                Long paidUser = mapEntry.getKey();
+                for(Map.Entry<Long,Double> participantEntry : mapEntry.getValue().entrySet())
+                {
+                    Long participantId = participantEntry.getKey();
+                    Double oweAmount = participantEntry.getValue();
+                    reverseBalanceMap.putIfAbsent(participantId,new HashMap<>());
+                    Map<Long,Double> paidUserMap = reverseBalanceMap.get(participantId);
+                    paidUserMap.put(paidUser,oweAmount);
+                    reverseBalanceMap.put(participantId,paidUserMap);
+                }
+            }
+        }
+        saveParticipantsBalance(reverseBalanceMap,groupId);
+    }
+
+    public void saveParticipantsBalance(Map<Long, Map<Long, Double>> balanceMap,Long groupId)
+    {
         if(balanceMap != null)
         {
             for(Map.Entry<Long,Map<Long,Double>> mapEntry : balanceMap.entrySet())
@@ -138,6 +206,8 @@ public class ExpenseService {
         }
     }
 
+
+
     public Map<Long, Map<Long, Double>> calculateParticipantsBalance(ExpenseRequest expenseRequest)
     {
         Map<Long, Map<Long, Double>> balanceMap = null;
@@ -153,33 +223,27 @@ public class ExpenseService {
         return balanceCalculator.calculateBalance(expenseRequest);
     }
 
-    /**
-     * This method handles saving Expense and related details
-     * @param expenseRequest
-     */
-    @Transactional
-    public void saveExpenseAndParticipantDetails(ExpenseRequest expenseRequest) {
-        Expense savedExpense = saveExpenseFromRequest(expenseRequest);
-        if(savedExpense != null)
-        {
-            boolean isParticipantsSaved = expenseParticipantService.saveExpenseParticipantsFromRequest(expenseRequest,
-                    savedExpense.getExpenseId());
 
-            if(isParticipantsSaved)
-            {
-                //Todo: Add validation for total amount equals to payers sum (On request)
-                //Calculate and save individual balances users owe
-                saveParticipantsBalance(expenseRequest);
-            }
-            else
-            {
-                throw new RuntimeException("Error occurred while saving Expense");
-            }
-        }
-        else
-        {
-            throw new RuntimeException("Error occurred while saving Expense");
-        }
+    public void deleteExpenseDetails(Long expenseId) {
+        //Before deleting recalculate the participants balance
+        createExpenseRequestFromExpenseId(expenseId);
     }
 
+    private void createExpenseRequestFromExpenseId(Long expenseId) {
+        List<PaidUser> paidUsers = paidUserRepository.findByExpenseId(expenseId);
+        List<ExpenseParticipant> participantList = expenseParticipantService.getParticipantsByExpenseId(expenseId);
+        Optional<Expense> optionalExpense = expenseRepository.findByExpenseId(expenseId);
+
+        if(!optionalExpense.isPresent())
+        {
+            throw new RuntimeException("Expense you are trying to delete doesn't exists");
+        }
+        Expense expense = optionalExpense.get();
+
+        ExpenseRequest expenseRequest = ExpenseRequest.builder()
+                .expenseId(expenseId)
+                .groupId(null)
+                .paidUsers(paidUsers)
+                .build();
+    }
 }

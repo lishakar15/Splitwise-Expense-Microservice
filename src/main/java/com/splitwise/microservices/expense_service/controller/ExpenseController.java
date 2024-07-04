@@ -67,6 +67,8 @@ public class ExpenseController {
     @DeleteMapping("delete-expense/{expenseId}")
     public void deleteExpense(@PathVariable("expenseId") Long expenseId)
     {
+
+        expenseService.deleteExpenseDetails(expenseId);
         //Todo delete expense
         //delete participants
         //delete paid users
