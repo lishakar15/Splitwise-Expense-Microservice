@@ -65,18 +65,20 @@ public class ExpenseController {
     }
 
     @DeleteMapping("delete-expense/{expenseId}")
-    public void deleteExpense(@PathVariable("expenseId") Long expenseId)
+    public ResponseEntity<String> deleteExpense(@PathVariable("expenseId") Long expenseId)
     {
-
-        expenseService.deleteExpenseDetails(expenseId);
-        //Todo delete expense
-        //delete participants
-        //delete paid users
-        //delete associated balances
-
+        try
+        {
+            expenseService.deleteExpenseDetails(expenseId);
+        }
+        catch (Exception ex)
+        {
+            System.out.println(ex.getMessage());
+            return new ResponseEntity<>(ex.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<>("Expense deleted successfully!!",HttpStatus.OK);
     }
-
-    }
+}
 
 
 

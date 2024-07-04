@@ -3,6 +3,7 @@ package com.splitwise.microservices.expense_service.mapper;
 import com.splitwise.microservices.expense_service.entity.ExpenseParticipant;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
 import com.splitwise.microservices.expense_service.model.ParticipantShare;
+import jakarta.servlet.http.Part;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -31,5 +32,20 @@ public class ExpenseParticipantMapper {
             participantList.add(participant);
         }
         return participantList;
+    }
+
+    public List<ParticipantShare> getParticipantShareListFromParticipantList(List<ExpenseParticipant> participantList)
+    {
+        List<ParticipantShare> participantShareList = new ArrayList<>();
+        for(ExpenseParticipant expenseParticipant : participantList)
+        {
+            ParticipantShare participantShare = ParticipantShare.builder()
+                    .userId(expenseParticipant.getParticipantId())
+                    .shareAmount(expenseParticipant.getSettlementAmount())
+                    .isPaidUser(expenseParticipant.getIsPayer())
+                    .build();
+            participantShareList.add(participantShare);
+        }
+        return participantShareList;
     }
 }

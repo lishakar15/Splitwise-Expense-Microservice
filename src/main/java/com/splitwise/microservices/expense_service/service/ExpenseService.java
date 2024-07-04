@@ -42,15 +42,7 @@ public class ExpenseService {
         if(expenseObj != null)
         {
             savedExpense = expenseRepository.save(expenseObj);
-            if(savedExpense != null)
-            {
-                List<PaidUser> paidUsers = expenseRequest.getPaidUsers();
-                for(PaidUser paidUser : paidUsers)
-                {
-                    paidUser.setExpenseId(savedExpense.getExpenseId());
-                    paidUserRepository.save(paidUser);
-                }
-            }
+            savePaidUsers(expenseRequest.getPaidUsers(),savedExpense.getExpenseId());
         }
        return savedExpense;
     }
@@ -68,7 +60,7 @@ public class ExpenseService {
 
             if(isParticipantsSaved)
             {
-                //Todo: Add validation for total amount equals to payers sum (On request)
+                //Todo: Add validation for total amount equals to payers` sum (On request)
                 //Calculate and save individual balances users owe
                 saveParticipantsBalance(expenseRequest);
             }
@@ -82,17 +74,50 @@ public class ExpenseService {
             throw new RuntimeException("Error occurred while saving Expense");
         }
     }
+    public void savePaidUsers(List<PaidUser> paidUsers,Long expenseId)
+    {
+        try{
+            for(PaidUser paidUser : paidUsers)
+            {
+                paidUser.setExpenseId(expenseId);
+                paidUserRepository.save(paidUser);
+            }
+        }
+        catch(Exception ex)
+        {
+            throw new RuntimeException("Error occurred while saving paid User details",ex);
+        }
+    }
+    @Transactional
     public void updateExpenseAndParticipantsFromRequest(ExpenseRequest expenseRequest) throws ExpenseException {
         if(expenseRequest == null)
         {
             throw new RuntimeException("Request cannot be null");
         }
         Long expenseId = expenseRequest.getExpenseId();
+        try{
+
+        //Undo previous balance calculation
+        ExpenseRequest oldExpenseRequest = createExpenseRequestFromExpenseId(expenseId);
+        reCalculateBalanceForDeleteExpense(oldExpenseRequest);
+
         Expense updateExpense = expenseMapper.getExpenseFromRequest(expenseRequest);
         updateExpense.setExpenseId(expenseId);
-
+        List<PaidUser> paidUsers = expenseRequest.getPaidUsers();
+        //Save Expense and Paid Users
         expenseRepository.save(updateExpense);
+        savePaidUsers(paidUsers,expenseId);
+        //Save Participants
         expenseParticipantService.updateParticipantsExpense(expenseRequest,expenseId);
+        //Calculate balance for updated expense
+        calculateParticipantsBalance(expenseRequest);
+
+        }
+        catch (Exception ex)
+        {
+            System.out.println(ex.getMessage());
+            throw new RuntimeException("Error occurred while updating Expense details");
+        }
     }
     public void saveParticipantsBalance(ExpenseRequest expenseRequest)
     {
@@ -223,27 +248,33 @@ public class ExpenseService {
         return balanceCalculator.calculateBalance(expenseRequest);
     }
 
-
+    @Transactional
     public void deleteExpenseDetails(Long expenseId) {
-        //Before deleting recalculate the participants balance
-        createExpenseRequestFromExpenseId(expenseId);
+        try
+        {
+            ExpenseRequest expenseRequest = createExpenseRequestFromExpenseId(expenseId);
+            reCalculateBalanceForDeleteExpense(expenseRequest);
+            expenseRepository.deleteByExpenseId(expenseId);
+            expenseParticipantService.deleteExpenseParticipants(expenseId);
+            paidUserRepository.deleteByExpenseId(expenseId);
+        }
+        catch (Exception ex)
+        {
+            throw new RuntimeException("Error occurred while processing delete request ");
+        }
     }
 
-    private void createExpenseRequestFromExpenseId(Long expenseId) {
+    private ExpenseRequest createExpenseRequestFromExpenseId(Long expenseId) {
         List<PaidUser> paidUsers = paidUserRepository.findByExpenseId(expenseId);
         List<ExpenseParticipant> participantList = expenseParticipantService.getParticipantsByExpenseId(expenseId);
         Optional<Expense> optionalExpense = expenseRepository.findByExpenseId(expenseId);
-
         if(!optionalExpense.isPresent())
         {
             throw new RuntimeException("Expense you are trying to delete doesn't exists");
         }
         Expense expense = optionalExpense.get();
-
-        ExpenseRequest expenseRequest = ExpenseRequest.builder()
-                .expenseId(expenseId)
-                .groupId(null)
-                .paidUsers(paidUsers)
-                .build();
+        ExpenseRequest expenseRequest = expenseMapper.createExpenseRequestFromExpenseId(expense,participantList,
+                paidUsers);
+        return expenseRequest;
     }
 }
