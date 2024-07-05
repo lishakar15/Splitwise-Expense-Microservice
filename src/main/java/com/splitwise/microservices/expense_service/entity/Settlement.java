@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 
 @Entity
 @Table(name="settlements")
@@ -26,4 +28,8 @@ public class Settlement {
     private Long addedBy;
     @Column(name = "amount_paid")
     private Double amountPaid;
+    @Column(name = "date_of_settlement")
+    private Date settlementDate;
+    @Column(name = "last_update_date")
+    private Date lastUpdateDate;
 }
