@@ -54,10 +54,12 @@ public class ExpenseController {
         }
         catch(ExpenseException ex)
         {
+            System.out.println(ex.getMessage());
             return new ResponseEntity<>(ex.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
         }
         catch(Exception ex)
         {
+            System.out.println(ex.getMessage());
             return new ResponseEntity<>("Error occurred while updating participant expenses",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -78,6 +80,8 @@ public class ExpenseController {
         }
         return new ResponseEntity<>("Expense deleted successfully!!",HttpStatus.OK);
     }
+
+
 }
 
 

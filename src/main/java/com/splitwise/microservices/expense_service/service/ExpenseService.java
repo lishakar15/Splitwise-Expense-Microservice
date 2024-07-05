@@ -10,7 +10,6 @@ import com.splitwise.microservices.expense_service.model.ExpenseRequest;
 import com.splitwise.microservices.expense_service.repository.BalanceRepository;
 import com.splitwise.microservices.expense_service.repository.ExpenseRepository;
 import com.splitwise.microservices.expense_service.repository.PaidUserRepository;
-import org.hibernate.dialect.function.array.ArrayContainsUnnestFunction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

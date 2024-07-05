@@ -22,6 +22,8 @@ public class Settlement {
     private Long paidBy;
     @Column(name = "paid_to")
     private Long paidTo;
+    @Column(name = "added_by")
+    private Long addedBy;
     @Column(name = "amount_paid")
     private Double amountPaid;
 }
