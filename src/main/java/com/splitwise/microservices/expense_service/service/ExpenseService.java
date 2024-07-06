@@ -7,9 +7,7 @@ import com.splitwise.microservices.expense_service.entity.PaidUser;
 import com.splitwise.microservices.expense_service.exception.ExpenseException;
 import com.splitwise.microservices.expense_service.mapper.ExpenseMapper;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
-import com.splitwise.microservices.expense_service.repository.BalanceRepository;
 import com.splitwise.microservices.expense_service.repository.ExpenseRepository;
-import com.splitwise.microservices.expense_service.repository.PaidUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,11 +25,11 @@ public class ExpenseService {
     @Autowired
     ExpenseRepository expenseRepository;
     @Autowired
-    PaidUserRepository paidUserRepository;
-    @Autowired
     ExpenseMapper expenseMapper;
     @Autowired
-    BalanceRepository balanceRepository;
+    BalanceService balanceService;
+    @Autowired
+    PaidUserService paidUserService;
 
     BalanceCalculator balanceCalculator;
 
@@ -79,7 +77,7 @@ public class ExpenseService {
             for(PaidUser paidUser : paidUsers)
             {
                 paidUser.setExpenseId(expenseId);
-                paidUserRepository.save(paidUser);
+                paidUserService.savePaidUser(paidUser);
             }
         }
         catch(Exception ex)
@@ -100,11 +98,11 @@ public class ExpenseService {
         ExpenseRequest oldExpenseRequest = createExpenseRequestFromExpenseId(expenseId);
         reCalculateBalanceForDeleteExpense(oldExpenseRequest);
 
-        Expense updateExpense = expenseMapper.getExpenseFromRequest(expenseRequest);
-        updateExpense.setExpenseId(expenseId);
+        Expense updatedExpense = expenseMapper.getExpenseFromRequest(expenseRequest);
+            updatedExpense.setExpenseId(expenseId);
         List<PaidUser> paidUsers = expenseRequest.getPaidUsers();
         //Save Expense and Paid Users
-        expenseRepository.save(updateExpense);
+        expenseRepository.save(updatedExpense);
         savePaidUsers(paidUsers,expenseId);
         //Save Participants
         expenseParticipantService.updateParticipantsExpense(expenseRequest,expenseId);
@@ -174,20 +172,20 @@ public class ExpenseService {
                         Long participantId = participantEntry.getKey();
                         Double amountOwes = participantEntry.getValue();
                         //Check if there is any past pending balance
-                        Balance existingBalance = balanceRepository.getPastBalanceOfParticipant(paidUserId,
-                            participantId);
+                        Balance existingBalance = balanceService.getPastBalanceOfParticipant(paidUserId,participantId
+                                ,groupId);
                         if(existingBalance != null)
                         {
                             //Update existing balance
                             amountOwes = amountOwes + existingBalance.getBalanceAmount();
                             existingBalance.setBalanceAmount(amountOwes);
-                            balanceRepository.save(existingBalance);
+                            balanceService.saveBalance(existingBalance);
                         }
                         else
                         {
                             //Check if paid user owes any amount to participant in the past
-                            existingBalance = balanceRepository.getPastBalanceOfParticipant(participantId,
-                                    paidUserId);
+                            existingBalance = balanceService.getPastBalanceOfParticipant(participantId,
+                                    paidUserId,groupId);
                             if(existingBalance != null)
                             {
                                 //reduce balances
@@ -195,22 +193,22 @@ public class ExpenseService {
                                  if(updatedAmount > 0)
                                  {
                                      existingBalance.setBalanceAmount(updatedAmount);
-                                     balanceRepository.save(existingBalance);
+                                     balanceService.saveBalance(existingBalance);
                                  }
                                  else if(updatedAmount<0){
-                                     balanceRepository.deleteByBalanceId(existingBalance.getBalanceId());
+                                     balanceService.deleteBalanceById(existingBalance.getBalanceId());
                                      Balance balance = Balance.builder()
                                              .groupId(groupId)
                                              .userId(participantId)
                                              .owesTo(paidUserId)
                                              .balanceAmount(Math.abs(updatedAmount))
                                              .build();
-                                     balanceRepository.save(balance);
+                                     balanceService.saveBalance(balance);
                                  }
                                  else if(updatedAmount == 0 )
                                  {
                                      //balance settled
-                                     balanceRepository.deleteByBalanceId(existingBalance.getBalanceId());
+                                     balanceService.deleteBalanceById(existingBalance.getBalanceId());
                                  }
                             }
                             else
@@ -221,8 +219,7 @@ public class ExpenseService {
                                         .owesTo(paidUserId)
                                         .balanceAmount(amountOwes)
                                         .build();
-                                balanceRepository.save(balance);
-                            }
+                                balanceService.saveBalance(balance);                            }
                         }
                     }
                 }
@@ -255,7 +252,7 @@ public class ExpenseService {
             reCalculateBalanceForDeleteExpense(expenseRequest);
             expenseRepository.deleteByExpenseId(expenseId);
             expenseParticipantService.deleteExpenseParticipants(expenseId);
-            paidUserRepository.deleteByExpenseId(expenseId);
+            paidUserService.deleteByExpenseId(expenseId);
         }
         catch (Exception ex)
         {
@@ -264,7 +261,7 @@ public class ExpenseService {
     }
 
     private ExpenseRequest createExpenseRequestFromExpenseId(Long expenseId) {
-        List<PaidUser> paidUsers = paidUserRepository.findByExpenseId(expenseId);
+        List<PaidUser> paidUsers = paidUserService.findByExpenseId(expenseId);
         List<ExpenseParticipant> participantList = expenseParticipantService.getParticipantsByExpenseId(expenseId);
         Optional<Expense> optionalExpense = expenseRepository.findByExpenseId(expenseId);
         if(!optionalExpense.isPresent())

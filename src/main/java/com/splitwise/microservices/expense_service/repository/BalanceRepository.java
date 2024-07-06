@@ -10,9 +10,10 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface BalanceRepository extends JpaRepository<Balance,Long> {
 
-    @Query(value = "select b from Balance b where b.userId =:participantId and b.owesTo =:paidUserId")
+    @Query(value = "select b from Balance b where b.userId =:participantId and b.owesTo =:paidUserId and b.groupId " +
+            "=:groupId")
     public Balance getPastBalanceOfParticipant(@Param("paidUserId") Long paidUserId,
-                                         @Param("participantId")Long participantId);
+                                         @Param("participantId")Long participantId, @Param("groupId") Long groupId);
 
     public void deleteByBalanceId(Long balanceId);
 

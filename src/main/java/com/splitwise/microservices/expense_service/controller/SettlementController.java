@@ -5,6 +5,7 @@ import com.splitwise.microservices.expense_service.service.SettlementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,6 +41,16 @@ public class SettlementController {
         return new ResponseEntity<>(settlements,HttpStatus.OK);
     }
 
+    @PutMapping("/updateSettlement")
+    public ResponseEntity<String> updateSettlement(@RequestBody Settlement settlement)
+    {
+        if(settlement == null || settlement.getSettlementId() == null)
+        {
+            return new ResponseEntity<>("Invalid settlement request", HttpStatus.BAD_REQUEST);
+        }
+        settlementService.updateSettlement(settlement);
+        return new ResponseEntity<>("Expense updated successfully", HttpStatus.OK);
+    }
     @DeleteMapping("/deleteSettlement/{settlementId}")
     public ResponseEntity<String> deleteSettlementById(@PathVariable("settlementId") Long settlementId)
     {

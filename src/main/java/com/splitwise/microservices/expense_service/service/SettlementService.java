@@ -12,11 +12,15 @@ import java.util.List;
 public class SettlementService {
     @Autowired
     SettlementRepository settlementRepository;
+    @Autowired
+    BalanceService balanceService;
 
     public Settlement saveSettlement(Settlement settlement)
     {
         try
         {
+            //Settle Balance Amount
+
             Settlement savedSettlement =  settlementRepository.save(settlement);
             return savedSettlement;
         }
@@ -58,4 +62,14 @@ public class SettlementService {
     }
 
 
+    public void updateSettlement(Settlement settlement) {
+
+        try{
+            settlementRepository.save(settlement);
+        }
+        catch(Exception ex)
+        {
+            //Need to throw Exception
+        }
+    }
 }
