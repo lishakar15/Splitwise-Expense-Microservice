@@ -19,6 +19,7 @@ public class Settlement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long settlementId;
+    @Column(name = "group_id")
     private Long groupId;
     @Column(name = "paid_by")
     private Long paidBy;

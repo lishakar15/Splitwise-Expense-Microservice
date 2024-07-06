@@ -3,10 +3,13 @@ package com.splitwise.microservices.expense_service.service;
 import com.splitwise.microservices.expense_service.entity.Settlement;
 import com.splitwise.microservices.expense_service.repository.SettlementRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SettlementService {
@@ -20,6 +23,7 @@ public class SettlementService {
         try
         {
             //Settle Balance Amount
+            balanceService.calculateBalanceForSettlement(settlement);
 
             Settlement savedSettlement =  settlementRepository.save(settlement);
             return savedSettlement;
@@ -30,7 +34,11 @@ public class SettlementService {
         }
         return settlement;
     }
-
+    public Settlement getSettlementById(Long settlementId)
+    {
+        Optional<Settlement> optional = settlementRepository.findById(settlementId);
+        return optional.isPresent()? optional.get() : null;
+    }
     public List<Settlement> getAllSettlementByGroupId(Long groupId)
     {
         List<Settlement> settlements = new ArrayList<>();
@@ -52,6 +60,8 @@ public class SettlementService {
         boolean isDeleted = false;
         try
         {
+            Settlement existingSettlement = getSettlementById(settlementId);
+            balanceService.revertPreviousBalanceForSettlement(existingSettlement);
             isDeleted = settlementRepository.deleteSettlementById(settlementId);
         }
         catch(Exception ex)
@@ -62,14 +72,25 @@ public class SettlementService {
     }
 
 
-    public void updateSettlement(Settlement settlement) {
-
-        try{
-            settlementRepository.save(settlement);
-        }
-        catch(Exception ex)
+    public ResponseEntity<Settlement> updateSettlement(Settlement settlement) {
+        if(settlement == null)
         {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try
+        {
+            Settlement existingSettlement = getSettlementById(settlement.getSettlementId());
+            if (existingSettlement == null) {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+            balanceService.revertPreviousBalanceForSettlement(existingSettlement);
+            //Update new Settlement
+            Settlement updatedSettlement = saveSettlement(settlement);
+
+            return new ResponseEntity<>(updatedSettlement, HttpStatus.OK);
+        } catch (Exception ex) {
             //Need to throw Exception
         }
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 }

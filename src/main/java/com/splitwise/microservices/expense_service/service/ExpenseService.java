@@ -96,7 +96,7 @@ public class ExpenseService {
 
         //Undo previous balance calculation
         ExpenseRequest oldExpenseRequest = createExpenseRequestFromExpenseId(expenseId);
-        reCalculateBalanceForDeleteExpense(oldExpenseRequest);
+            revertPreviousBalanceForExpense(oldExpenseRequest);
 
         Expense updatedExpense = expenseMapper.getExpenseFromRequest(expenseRequest);
             updatedExpense.setExpenseId(expenseId);
@@ -129,7 +129,7 @@ public class ExpenseService {
      * This method undo the balance calculation of an expense before update/delete request
      * @param expenseRequest
      */
-    public void reCalculateBalanceForDeleteExpense(ExpenseRequest expenseRequest)
+    public void revertPreviousBalanceForExpense(ExpenseRequest expenseRequest)
     {
         if(expenseRequest == null)
         {
@@ -172,7 +172,7 @@ public class ExpenseService {
                         Long participantId = participantEntry.getKey();
                         Double amountOwes = participantEntry.getValue();
                         //Check if there is any past pending balance
-                        Balance existingBalance = balanceService.getPastBalanceOfParticipant(paidUserId,participantId
+                        Balance existingBalance = balanceService.getPastBalanceOfUser(paidUserId,participantId
                                 ,groupId);
                         if(existingBalance != null)
                         {
@@ -184,7 +184,7 @@ public class ExpenseService {
                         else
                         {
                             //Check if paid user owes any amount to participant in the past
-                            existingBalance = balanceService.getPastBalanceOfParticipant(participantId,
+                            existingBalance = balanceService.getPastBalanceOfUser(participantId,
                                     paidUserId,groupId);
                             if(existingBalance != null)
                             {
@@ -249,7 +249,7 @@ public class ExpenseService {
         try
         {
             ExpenseRequest expenseRequest = createExpenseRequestFromExpenseId(expenseId);
-            reCalculateBalanceForDeleteExpense(expenseRequest);
+            revertPreviousBalanceForExpense(expenseRequest);
             expenseRepository.deleteByExpenseId(expenseId);
             expenseParticipantService.deleteExpenseParticipants(expenseId);
             paidUserService.deleteByExpenseId(expenseId);
