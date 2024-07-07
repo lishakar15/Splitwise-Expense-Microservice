@@ -62,7 +62,8 @@ public class SettlementService {
         {
             Settlement existingSettlement = getSettlementById(settlementId);
             balanceService.revertPreviousBalanceForSettlement(existingSettlement);
-            isDeleted = settlementRepository.deleteSettlementById(settlementId);
+            settlementRepository.deleteSettlementById(settlementId);
+            isDeleted = true;
         }
         catch(Exception ex)
         {

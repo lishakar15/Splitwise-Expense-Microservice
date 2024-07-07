@@ -72,7 +72,7 @@ public class BalanceService {
                 else if(newBalanceAmount == 0)
                 {
                     deleteBalanceById(balance.getBalanceId());
-                    balance = null;
+                    return;
                 }
                 if(balance != null)
                 {
@@ -81,24 +81,21 @@ public class BalanceService {
 
             }
             //Check if the receiver owes any balance to payer
-            else if(balance == null)
+            balance = getPastBalanceOfUser(receiverId,payerId,groupId);
+            if(balance != null)
             {
-                balance = getPastBalanceOfUser(receiverId,payerId,groupId);
-                if(balance != null)
-                {
                     Double pastBalanceAmount = balance.getBalanceAmount();
                     Double newBalanceAmount = pastBalanceAmount + amountPaid;
                     balance.setBalanceAmount(newBalanceAmount);
                     balanceRepository.save(balance);
-                }
             }
             //If no past balances between payer and receiver then add new balance record
             else
             {
                 balance = Balance.builder()
                         .groupId(groupId)
-                        .userId(payerId)
-                        .owesTo(receiverId)
+                        .userId(receiverId)
+                        .owesTo(payerId)
                         .balanceAmount(amountPaid)
                         .build();
                 balanceRepository.save(balance);

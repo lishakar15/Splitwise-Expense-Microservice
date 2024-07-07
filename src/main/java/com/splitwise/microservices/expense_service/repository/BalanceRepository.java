@@ -2,9 +2,11 @@ package com.splitwise.microservices.expense_service.repository;
 
 import com.splitwise.microservices.expense_service.entity.Balance;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Repository
@@ -15,6 +17,9 @@ public interface BalanceRepository extends JpaRepository<Balance,Long> {
     public Balance getPastBalanceOfUser(@Param("userId") Long userId,
                                          @Param("owesTo")Long owesToUserId, @Param("groupId") Long groupId);
 
-    public void deleteByBalanceId(Long balanceId);
+    @Transactional
+    @Modifying
+    @Query(value = "delete from Balance b where b.balanceId =:balanceId")
+    public void deleteByBalanceId(@Param("balanceId") Long balanceId);
 
 }
