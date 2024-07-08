@@ -94,4 +94,21 @@ public class SettlementService {
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
+
+    public Settlement getSettlementDetailsByID(Long settlementId) {
+        Settlement settlement = null;
+        try
+        {
+            Optional<Settlement> optional = settlementRepository.findById(settlementId);
+            if(optional.isPresent())
+            {
+                settlement = optional.get();
+            }
+        }
+        catch(Exception ex)
+        {
+            //Need to throw Exception
+        }
+        return settlement;
+    }
 }

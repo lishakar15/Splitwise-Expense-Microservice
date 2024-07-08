@@ -178,6 +178,7 @@ public class ExpenseService {
                         {
                             //Update existing balance
                             amountOwes = amountOwes + existingBalance.getBalanceAmount();
+                            amountOwes = Math.round(amountOwes * 100.0) / 100.0;
                             existingBalance.setBalanceAmount(amountOwes);
                             balanceService.saveBalance(existingBalance);
                         }
@@ -186,10 +187,12 @@ public class ExpenseService {
                             //Check if paid user owes any amount to participant in the past
                             existingBalance = balanceService.getPastBalanceOfUser(participantId,
                                     paidUserId,groupId);
+
                             if(existingBalance != null)
                             {
                                 //reduce balances
                                  Double updatedAmount = existingBalance.getBalanceAmount() - amountOwes;
+                                 updatedAmount = Math.round(updatedAmount * 100.0) / 100.0;
                                  if(updatedAmount > 0)
                                  {
                                      existingBalance.setBalanceAmount(updatedAmount);
