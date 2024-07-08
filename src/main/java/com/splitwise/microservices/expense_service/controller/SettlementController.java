@@ -30,7 +30,7 @@ public class SettlementController {
         return new ResponseEntity<>(savedSettlement,HttpStatus.OK);
     }
 
-    @GetMapping("/getSettlementDetails/{groupId}")
+    @GetMapping("/getAllSettlements/{groupId}")
     public ResponseEntity<?> getAllSettlementRecords(@PathVariable("groupId") Long groupId)
     {
         if(groupId == null)
@@ -39,6 +39,22 @@ public class SettlementController {
         }
         List<Settlement> settlements = settlementService.getAllSettlementByGroupId(groupId);
         return new ResponseEntity<>(settlements,HttpStatus.OK);
+    }
+
+    @GetMapping("/getSettlementDetails/{settlementId}")
+    public ResponseEntity<Settlement> getSettlementDetails(@PathVariable("settlementId") Long settlementId)
+    {
+        if(settlementId == null)
+        {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        Settlement settlement = settlementService.getSettlementDetailsByID(settlementId);
+        if(settlement == null)
+        {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(settlement,HttpStatus.OK);
     }
 
     @PutMapping("/updateSettlement")

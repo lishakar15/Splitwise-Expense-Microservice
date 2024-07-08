@@ -56,9 +56,10 @@ public class BalanceService {
             {
                 Double pastBalanceAmount = balance.getBalanceAmount();
                 Double newBalanceAmount = pastBalanceAmount - amountPaid;
+                newBalanceAmount = Math.round(newBalanceAmount * 100.0) / 100.0; // Rounding newBalanceAmount to two decimal places
                 if(newBalanceAmount < 0)
                 {
-                    balance.setBalanceAmount(newBalanceAmount);
+                    balance.setBalanceAmount(Math.abs(newBalanceAmount));
                     Long pastOwesToId = balance.getOwesTo();
                     balance.setOwesTo(balance.getUserId());
                     balance.setUserId(pastOwesToId);
@@ -77,6 +78,7 @@ public class BalanceService {
                 if(balance != null)
                 {
                     saveBalance(balance);
+                    return;
                 }
 
             }
@@ -86,6 +88,7 @@ public class BalanceService {
             {
                     Double pastBalanceAmount = balance.getBalanceAmount();
                     Double newBalanceAmount = pastBalanceAmount + amountPaid;
+                    newBalanceAmount = Math.round(newBalanceAmount * 100.0) / 100.0; // Rounding newBalanceAmount to two decimal places
                     balance.setBalanceAmount(newBalanceAmount);
                     balanceRepository.save(balance);
             }
