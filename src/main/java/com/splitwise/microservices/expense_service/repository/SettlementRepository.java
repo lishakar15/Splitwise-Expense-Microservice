@@ -14,7 +14,7 @@ import java.util.List;
 @Repository
 public interface SettlementRepository extends JpaRepository<Settlement, Long> {
 
-    @Query(value ="select s from Settlement s where s.groupId =: groupId")
+    @Query(value ="select s from Settlement s where s.groupId =:groupId")
     List<Settlement> getAllSettlementByGroupId(@Param("groupId") Long groupId);
 
     @Modifying
