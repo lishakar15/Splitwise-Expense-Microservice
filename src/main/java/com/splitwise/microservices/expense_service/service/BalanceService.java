@@ -6,6 +6,9 @@ import com.splitwise.microservices.expense_service.repository.BalanceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class BalanceService {
     @Autowired
@@ -109,5 +112,30 @@ public class BalanceService {
         {
             // need to throw exception
         }
+    }
+
+    public List<Balance> getAllBalancesByGroupId(Long groupId) {
+        List<Balance> balanceList = null;
+        try
+        {
+            balanceList =  balanceRepository.getBalancesByGroupId(groupId);
+        }
+        catch (Exception ex) {
+            //Need to throw Exception
+        }
+        return balanceList;
+    }
+
+    public List<Balance> getUsersAllBalances(Long userId) {
+        List<Balance> balanceList = new ArrayList<>();
+        try
+        {
+            balanceList =  balanceRepository.getUsersAllBalances(userId);
+        }
+        catch(Exception ex)
+        {
+            //Need to throw Exception
+        }
+        return balanceList;
     }
 }
