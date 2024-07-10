@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 
 @Repository
 public interface BalanceRepository extends JpaRepository<Balance,Long> {
@@ -21,5 +23,8 @@ public interface BalanceRepository extends JpaRepository<Balance,Long> {
     @Modifying
     @Query(value = "delete from Balance b where b.balanceId =:balanceId")
     public void deleteByBalanceId(@Param("balanceId") Long balanceId);
-
+    @Query(value = "select b from Balance b where b.groupId =:groupId")
+    List<Balance> getBalancesByGroupId(@Param("groupId") Long groupId);
+    @Query(value = "select b from Balance b where b.userId =:loggedInUserId or b.owesTo =:loggedInUserId")
+    List<Balance> getUsersAllBalances(@Param("loggedInUserId") Long loggedInUserId);
 }
