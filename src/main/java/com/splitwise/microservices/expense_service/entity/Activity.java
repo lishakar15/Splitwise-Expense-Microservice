@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Data
@@ -32,4 +33,6 @@ public class Activity {
     private String message;
     @Column(name = "create_date")
     private Date createDate;
+    @OneToMany(mappedBy = "activity")
+    private List<ChangeLog> changeLogs;
 }

@@ -27,5 +27,8 @@ public class ChangeLog {
     private String changeTo;
     @Column(name = "log_date")
     private Date logDate;
+    @ManyToOne()
+    @JoinColumn(name = "activity_id")
+    private Activity activity;
 
 }
