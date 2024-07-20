@@ -1,13 +1,20 @@
 package com.splitwise.microservices.expense_service.service;
 
+import com.splitwise.microservices.expense_service.clients.UserClient;
+import com.splitwise.microservices.expense_service.constants.StringConstants;
 import com.splitwise.microservices.expense_service.entity.Balance;
 import com.splitwise.microservices.expense_service.entity.Expense;
 import com.splitwise.microservices.expense_service.entity.ExpenseParticipant;
 import com.splitwise.microservices.expense_service.entity.PaidUser;
+import com.splitwise.microservices.expense_service.enums.ActivityType;
 import com.splitwise.microservices.expense_service.exception.ExpenseException;
+import com.splitwise.microservices.expense_service.external.ActivityRequest;
+import com.splitwise.microservices.expense_service.kafka.KafkaProducer;
 import com.splitwise.microservices.expense_service.mapper.ExpenseMapper;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
 import com.splitwise.microservices.expense_service.repository.ExpenseRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,8 +37,11 @@ public class ExpenseService {
     BalanceService balanceService;
     @Autowired
     PaidUserService paidUserService;
-
-    BalanceCalculator balanceCalculator;
+    @Autowired
+    UserClient userClient;
+    @Autowired
+    KafkaProducer kafkaProducer;
+    public static final Logger LOGGER = LoggerFactory.getLogger(ExpenseService.class);
 
     public Expense saveExpenseFromRequest(ExpenseRequest expenseRequest) {
         Expense expenseObj = expenseMapper.getExpenseFromRequest(expenseRequest);
@@ -60,6 +70,7 @@ public class ExpenseService {
                 //Todo: Add validation for total amount equals to payers` sum (On request)
                 //Calculate and save individual balances users owe
                 saveParticipantsBalance(expenseRequest);
+                createExpenseActivity(ActivityType.EXPENSE_CREATED,expenseRequest);
             }
             else
             {
@@ -71,6 +82,43 @@ public class ExpenseService {
             throw new RuntimeException("Error occurred while saving Expense");
         }
     }
+
+    private void createExpenseActivity(ActivityType activityType, ExpenseRequest expenseRequest) {
+        ActivityRequest activityRequest = ActivityRequest.builder()
+                .activityType(activityType)
+                .createDate(null)
+                .expenseId(expenseRequest.getExpenseId())
+                .groupId(expenseRequest.getGroupId())
+                .build();
+        if(ActivityType.EXPENSE_CREATED.equals(activityType))
+        {
+            //Expense Create Activity
+            String userName = userClient.getUserName(expenseRequest.getCreatedBy());
+            StringBuilder sb = new StringBuilder();
+            sb.append(userName);
+            sb.append(StringConstants.EXPENSE_CREATED);
+            sb.append(expenseRequest.getExpenseDescription());
+            activityRequest.setMessage(sb.toString());
+        }
+        else if(ActivityType.EXPENSE_UPDATED.equals(activityType))
+        {
+            //Expense Update Activity
+        }
+        else if (ActivityType.EXPENSE_DELETED.equals(activityType))
+        {
+            //Expense Delete Activity
+        }
+        //Send request to the producer
+        try
+        {
+            kafkaProducer.sendActivityMessage(activityRequest);
+        }
+        catch (Exception ex)
+        {
+            LOGGER.error("Error occurred while sending message to Kafka Topic "+ex);
+        }
+    }
+
     public void savePaidUsers(List<PaidUser> paidUsers,Long expenseId)
     {
         try{
@@ -236,6 +284,7 @@ public class ExpenseService {
     {
         Map<Long, Map<Long, Double>> balanceMap = null;
         Long groupId = expenseRequest.getGroupId();
+        BalanceCalculator balanceCalculator = null;
         if(expenseRequest != null && expenseRequest.getPaidUsers().size()>1)
         {
             balanceCalculator = new MultiPayerBalanceCalculator();

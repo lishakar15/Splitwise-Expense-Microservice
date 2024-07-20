@@ -33,6 +33,7 @@ public class ExpenseMapper {
                 .createDate(expenseRequest.getCreateDate())
                 .lastUpdateDate(expenseRequest.getLastUpdateDate())
                 .splitType(SplitType.valueOf(expenseRequest.getSplitType()))
+                .createdBy(expenseRequest.getCreatedBy())
                 .build();
         return expense;
     }

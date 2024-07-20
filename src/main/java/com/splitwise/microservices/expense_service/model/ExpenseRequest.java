@@ -25,4 +25,5 @@ public class ExpenseRequest {
     private String category;
     private List<ParticipantShare> participantShareList;
     private String splitType;
+    private Long createdBy;
 }

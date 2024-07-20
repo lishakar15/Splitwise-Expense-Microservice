@@ -33,9 +33,12 @@ public class Expense {
     private Date createDate;
     @Column(name = "last_updated")
     private Date lastUpdateDate;
-
+    @Column(name = "category")
     private String category;
+    @Column(name =("split_type"))
     @Enumerated(EnumType.STRING)
     private SplitType splitType;
+    @Column(name = "createdBy")
+    private Long createdBy;
 
 }
