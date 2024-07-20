@@ -9,6 +9,7 @@ import com.splitwise.microservices.expense_service.entity.PaidUser;
 import com.splitwise.microservices.expense_service.enums.ActivityType;
 import com.splitwise.microservices.expense_service.exception.ExpenseException;
 import com.splitwise.microservices.expense_service.external.ActivityRequest;
+import com.splitwise.microservices.expense_service.external.ChangeLog;
 import com.splitwise.microservices.expense_service.kafka.KafkaProducer;
 import com.splitwise.microservices.expense_service.mapper.ExpenseMapper;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
@@ -19,10 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class ExpenseService {
@@ -70,7 +68,7 @@ public class ExpenseService {
                 //Todo: Add validation for total amount equals to payers` sum (On request)
                 //Calculate and save individual balances users owe
                 saveParticipantsBalance(expenseRequest);
-                createExpenseActivity(ActivityType.EXPENSE_CREATED,expenseRequest);
+                createExpenseActivity(ActivityType.EXPENSE_CREATED,expenseRequest,null);
             }
             else
             {
@@ -83,30 +81,47 @@ public class ExpenseService {
         }
     }
 
-    private void createExpenseActivity(ActivityType activityType, ExpenseRequest expenseRequest) {
+    private void createExpenseActivity(ActivityType activityType, ExpenseRequest newExpenseRequest,
+                                       ExpenseRequest oldExpenseRequest) {
         ActivityRequest activityRequest = ActivityRequest.builder()
                 .activityType(activityType)
                 .createDate(null)
-                .expenseId(expenseRequest.getExpenseId())
-                .groupId(expenseRequest.getGroupId())
+                .expenseId(newExpenseRequest.getExpenseId())
+                .groupId(newExpenseRequest.getGroupId())
                 .build();
+        StringBuilder sb = new StringBuilder();
+        String userName = StringConstants.EMPTY_STRING;
         if(ActivityType.EXPENSE_CREATED.equals(activityType))
         {
             //Expense Create Activity
-            String userName = userClient.getUserName(expenseRequest.getCreatedBy());
-            StringBuilder sb = new StringBuilder();
+            userName = userClient.getUserName(newExpenseRequest.getCreatedBy());
             sb.append(userName);
             sb.append(StringConstants.EXPENSE_CREATED);
-            sb.append(expenseRequest.getExpenseDescription());
+            sb.append(newExpenseRequest.getExpenseDescription());
             activityRequest.setMessage(sb.toString());
         }
         else if(ActivityType.EXPENSE_UPDATED.equals(activityType))
         {
             //Expense Update Activity
+            userName = userClient.getUserName(newExpenseRequest.getCreatedBy());
+            sb.append(userName);
+            sb.append(StringConstants.EXPENSE_UPDATED);
+            sb.append(newExpenseRequest.getExpenseDescription());
+            activityRequest.setMessage(sb.toString());
+            if(oldExpenseRequest != null)
+            {
+                List<ChangeLog> changeLogs = createChangeLogForExpenseModify(newExpenseRequest,oldExpenseRequest);
+            }
+
         }
         else if (ActivityType.EXPENSE_DELETED.equals(activityType))
         {
             //Expense Delete Activity
+            userName = userClient.getUserName(newExpenseRequest.getCreatedBy());
+            sb.append(userName);
+            sb.append(StringConstants.EXPENSE_DELETED);
+            sb.append(newExpenseRequest.getExpenseDescription());
+            activityRequest.setMessage(sb.toString());
         }
         //Send request to the producer
         try
@@ -117,6 +132,58 @@ public class ExpenseService {
         {
             LOGGER.error("Error occurred while sending message to Kafka Topic "+ex);
         }
+    }
+
+    private List<ChangeLog> createChangeLogForExpenseModify(ExpenseRequest newExpenseRequest,
+                                                    ExpenseRequest oldExpenseRequest) {
+        List<ChangeLog> changeLogs = new ArrayList<>();
+        if (newExpenseRequest != null && oldExpenseRequest != null)
+        {
+            if(!newExpenseRequest.equals(oldExpenseRequest))
+            {
+                if(!oldExpenseRequest.getExpenseDescription().equals(newExpenseRequest.getExpenseDescription()))
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(StringConstants.DESCRIPTION);
+                    sb.append(" from ");
+                    sb.append(oldExpenseRequest.getExpenseDescription());
+                    sb.append(" to ");
+                    sb.append(newExpenseRequest.getExpenseDescription());
+                   changeLogs.add(new ChangeLog(sb.toString()));
+                }
+                if(!oldExpenseRequest.getTotalAmount().equals(newExpenseRequest.getTotalAmount()))
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(StringConstants.AMOUNT);
+                    sb.append(" from ");
+                    sb.append(oldExpenseRequest.getTotalAmount());
+                    sb.append(" to ");
+                    sb.append(newExpenseRequest.getTotalAmount());
+                    changeLogs.add(new ChangeLog(sb.toString()));
+                }
+                if(!oldExpenseRequest.getCategory().equals(newExpenseRequest.getCategory()))
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(StringConstants.CATEGORY);
+                    sb.append(" from ");
+                    sb.append(oldExpenseRequest.getCategory());
+                    sb.append(" to ");
+                    sb.append(newExpenseRequest.getCategory());
+                    changeLogs.add(new ChangeLog(sb.toString()));
+                }
+                if(!oldExpenseRequest.getSpentOnDate().equals(newExpenseRequest.getSpentOnDate()))
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(StringConstants.SPENT_ON_DATE);
+                    sb.append(" from ");
+                    sb.append(oldExpenseRequest.getSpentOnDate());
+                    sb.append(" to ");
+                    sb.append(newExpenseRequest.getSpentOnDate());
+                    changeLogs.add(new ChangeLog(sb.toString()));
+                }
+            }
+        }
+
     }
 
     public void savePaidUsers(List<PaidUser> paidUsers,Long expenseId)
@@ -156,7 +223,8 @@ public class ExpenseService {
         expenseParticipantService.updateParticipantsExpense(expenseRequest,expenseId);
         //Calculate balance for updated expense
         calculateParticipantsBalance(expenseRequest);
-
+        //Record update Activity
+        createExpenseActivity(ActivityType.EXPENSE_UPDATED,expenseRequest,oldExpenseRequest);
         }
         catch (Exception ex)
         {
@@ -305,6 +373,7 @@ public class ExpenseService {
             expenseRepository.deleteByExpenseId(expenseId);
             expenseParticipantService.deleteExpenseParticipants(expenseId);
             paidUserService.deleteByExpenseId(expenseId);
+            createExpenseActivity(ActivityType.EXPENSE_DELETED,expenseRequest,null);
         }
         catch (Exception ex)
         {
