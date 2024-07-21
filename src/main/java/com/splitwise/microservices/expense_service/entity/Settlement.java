@@ -28,6 +28,8 @@ public class Settlement {
     private Long paidTo;
     @Column(name = "created_by")
     private Long createdBy;
+    @Transient
+    private Long modifiedBy;
     @Column(name = "amount_paid")
     private Double amountPaid;
     @Column(name = "payment_method")
@@ -36,6 +38,18 @@ public class Settlement {
     private Date settlementDate;
     @Column(name = "last_update_date")
     private Date lastUpdateDate;
+
+    public Settlement(Settlement settlement) {
+        this.settlementId = settlement.getSettlementId();
+        this.groupId = settlement.getGroupId();
+        this.paidBy = settlement.getPaidBy();
+        this.paidTo = settlement.getPaidTo();
+        this.createdBy = settlement.getCreatedBy();
+        this.amountPaid = settlement.getAmountPaid();
+        this.paymentMethod = settlement.getPaymentMethod();
+        this.settlementDate = settlement.getSettlementDate();
+        this.lastUpdateDate = settlement.getLastUpdateDate();
+    }
 
     @Override
     public boolean equals(Object o) {

@@ -67,17 +67,18 @@ public class SettlementController {
         settlementService.updateSettlement(settlement);
         return new ResponseEntity<>("Expense updated successfully", HttpStatus.OK);
     }
-    @DeleteMapping("/deleteSettlement/{settlementId}")
-    public ResponseEntity<String> deleteSettlementById(@PathVariable("settlementId") Long settlementId)
+    @DeleteMapping("/deleteSettlement/{settlementId}/{loggedInUserId}")
+    public ResponseEntity<String> deleteSettlementById(@PathVariable("settlementId") Long settlementId,
+                                                       @PathVariable("loggedInUserId") Long loggedInUserId)
     {
         if(settlementId == null)
         {
             return new ResponseEntity<>("Invalid request", HttpStatus.BAD_REQUEST);
         }
-        boolean isSettlementDeleted = settlementService.deleteSettlementById(settlementId);
+        boolean isSettlementDeleted = settlementService.deleteSettlementById(settlementId,loggedInUserId);
         if(!isSettlementDeleted)
         {
-            return new ResponseEntity<>("Error occurred while deleting settlement", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error occurred while deleting settlement", HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>("Expense deleted successfully",HttpStatus.OK);
     }
