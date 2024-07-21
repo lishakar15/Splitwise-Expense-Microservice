@@ -1,6 +1,5 @@
 package com.splitwise.microservices.expense_service.controller;
 
-import com.splitwise.microservices.expense_service.entity.Expense;
 import com.splitwise.microservices.expense_service.exception.ExpenseException;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
 import com.splitwise.microservices.expense_service.service.ExpenseParticipantService;

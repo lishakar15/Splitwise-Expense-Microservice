@@ -111,6 +111,10 @@ public class ExpenseService {
             if(oldExpenseRequest != null)
             {
                 List<ChangeLog> changeLogs = createChangeLogForExpenseModify(newExpenseRequest,oldExpenseRequest);
+                if(changeLogs != null && !changeLogs.isEmpty())
+                {
+                    activityRequest.setChangeLogs(changeLogs);
+                }
             }
 
         }
@@ -149,7 +153,7 @@ public class ExpenseService {
                     sb.append(oldExpenseRequest.getExpenseDescription());
                     sb.append(" to ");
                     sb.append(newExpenseRequest.getExpenseDescription());
-                   changeLogs.add(new ChangeLog(sb.toString()));
+                    changeLogs.add(new ChangeLog(sb.toString()));
                 }
                 if(!oldExpenseRequest.getTotalAmount().equals(newExpenseRequest.getTotalAmount()))
                 {
@@ -171,7 +175,7 @@ public class ExpenseService {
                     sb.append(newExpenseRequest.getCategory());
                     changeLogs.add(new ChangeLog(sb.toString()));
                 }
-                if(!oldExpenseRequest.getSpentOnDate().equals(newExpenseRequest.getSpentOnDate()))
+               if(!oldExpenseRequest.getSpentOnDate().equals(newExpenseRequest.getSpentOnDate()))
                 {
                     StringBuilder sb = new StringBuilder();
                     sb.append(StringConstants.SPENT_ON_DATE);
@@ -181,9 +185,19 @@ public class ExpenseService {
                     sb.append(newExpenseRequest.getSpentOnDate());
                     changeLogs.add(new ChangeLog(sb.toString()));
                 }
+                if(!oldExpenseRequest.getSplitType().equals(newExpenseRequest.getSplitType()))
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(StringConstants.SPLIT_TYPE);
+                    sb.append(" from ");
+                    sb.append(oldExpenseRequest.getSplitType());
+                    sb.append(" to ");
+                    sb.append(newExpenseRequest.getSplitType());
+                    changeLogs.add(new ChangeLog(sb.toString()));
+                }
             }
         }
-
+        return changeLogs;
     }
 
     public void savePaidUsers(List<PaidUser> paidUsers,Long expenseId)
