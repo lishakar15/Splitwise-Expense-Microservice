@@ -1,21 +1,26 @@
 package com.splitwise.microservices.expense_service.service;
 
+import com.splitwise.microservices.expense_service.clients.UserClient;
+import com.splitwise.microservices.expense_service.constants.StringConstants;
 import com.splitwise.microservices.expense_service.entity.Balance;
 import com.splitwise.microservices.expense_service.entity.Expense;
 import com.splitwise.microservices.expense_service.entity.ExpenseParticipant;
 import com.splitwise.microservices.expense_service.entity.PaidUser;
+import com.splitwise.microservices.expense_service.enums.ActivityType;
 import com.splitwise.microservices.expense_service.exception.ExpenseException;
+import com.splitwise.microservices.expense_service.external.ActivityRequest;
+import com.splitwise.microservices.expense_service.external.ChangeLog;
+import com.splitwise.microservices.expense_service.kafka.KafkaProducer;
 import com.splitwise.microservices.expense_service.mapper.ExpenseMapper;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
 import com.splitwise.microservices.expense_service.repository.ExpenseRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class ExpenseService {
@@ -30,8 +35,11 @@ public class ExpenseService {
     BalanceService balanceService;
     @Autowired
     PaidUserService paidUserService;
-
-    BalanceCalculator balanceCalculator;
+    @Autowired
+    UserClient userClient;
+    @Autowired
+    KafkaProducer kafkaProducer;
+    public static final Logger LOGGER = LoggerFactory.getLogger(ExpenseService.class);
 
     public Expense saveExpenseFromRequest(ExpenseRequest expenseRequest) {
         Expense expenseObj = expenseMapper.getExpenseFromRequest(expenseRequest);
@@ -60,6 +68,7 @@ public class ExpenseService {
                 //Todo: Add validation for total amount equals to payers` sum (On request)
                 //Calculate and save individual balances users owe
                 saveParticipantsBalance(expenseRequest);
+                createExpenseActivity(ActivityType.EXPENSE_CREATED,expenseRequest,null);
             }
             else
             {
@@ -71,6 +80,126 @@ public class ExpenseService {
             throw new RuntimeException("Error occurred while saving Expense");
         }
     }
+
+    private void createExpenseActivity(ActivityType activityType, ExpenseRequest newExpenseRequest,
+                                       ExpenseRequest oldExpenseRequest) {
+        ActivityRequest activityRequest = ActivityRequest.builder()
+                .activityType(activityType)
+                .createDate(null)
+                .expenseId(newExpenseRequest.getExpenseId())
+                .groupId(newExpenseRequest.getGroupId())
+                .build();
+        StringBuilder sb = new StringBuilder();
+        String userName = StringConstants.EMPTY_STRING;
+        if(ActivityType.EXPENSE_CREATED.equals(activityType))
+        {
+            //Expense Create Activity
+            userName = userClient.getUserName(newExpenseRequest.getCreatedBy());
+            sb.append(userName);
+            sb.append(StringConstants.EXPENSE_CREATED);
+            sb.append(newExpenseRequest.getExpenseDescription());
+            activityRequest.setMessage(sb.toString());
+        }
+        else if(ActivityType.EXPENSE_UPDATED.equals(activityType))
+        {
+            //Expense Update Activity
+            userName = userClient.getUserName(newExpenseRequest.getCreatedBy());
+            sb.append(userName);
+            sb.append(StringConstants.EXPENSE_UPDATED);
+            sb.append(newExpenseRequest.getExpenseDescription());
+            activityRequest.setMessage(sb.toString());
+            if(oldExpenseRequest != null)
+            {
+                List<ChangeLog> changeLogs = createChangeLogForExpenseModify(newExpenseRequest,oldExpenseRequest);
+                if(changeLogs != null && !changeLogs.isEmpty())
+                {
+                    activityRequest.setChangeLogs(changeLogs);
+                }
+            }
+
+        }
+        else if (ActivityType.EXPENSE_DELETED.equals(activityType))
+        {
+            //Expense Delete Activity
+            userName = userClient.getUserName(newExpenseRequest.getCreatedBy());
+            sb.append(userName);
+            sb.append(StringConstants.EXPENSE_DELETED);
+            sb.append(newExpenseRequest.getExpenseDescription());
+            activityRequest.setMessage(sb.toString());
+        }
+        //Send request to the producer
+        try
+        {
+            kafkaProducer.sendActivityMessage(activityRequest);
+        }
+        catch (Exception ex)
+        {
+            LOGGER.error("Error occurred while sending message to Kafka Topic "+ex);
+        }
+    }
+
+    private List<ChangeLog> createChangeLogForExpenseModify(ExpenseRequest newExpenseRequest,
+                                                    ExpenseRequest oldExpenseRequest) {
+        List<ChangeLog> changeLogs = new ArrayList<>();
+        if (newExpenseRequest != null && oldExpenseRequest != null)
+        {
+            if(!newExpenseRequest.equals(oldExpenseRequest))
+            {
+                if(!oldExpenseRequest.getExpenseDescription().equals(newExpenseRequest.getExpenseDescription()))
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(StringConstants.DESCRIPTION);
+                    sb.append(" from ");
+                    sb.append(oldExpenseRequest.getExpenseDescription());
+                    sb.append(" to ");
+                    sb.append(newExpenseRequest.getExpenseDescription());
+                    changeLogs.add(new ChangeLog(sb.toString()));
+                }
+                if(!oldExpenseRequest.getTotalAmount().equals(newExpenseRequest.getTotalAmount()))
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(StringConstants.AMOUNT);
+                    sb.append(" from ");
+                    sb.append(oldExpenseRequest.getTotalAmount());
+                    sb.append(" to ");
+                    sb.append(newExpenseRequest.getTotalAmount());
+                    changeLogs.add(new ChangeLog(sb.toString()));
+                }
+                if(!oldExpenseRequest.getCategory().equals(newExpenseRequest.getCategory()))
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(StringConstants.CATEGORY);
+                    sb.append(" from ");
+                    sb.append(oldExpenseRequest.getCategory());
+                    sb.append(" to ");
+                    sb.append(newExpenseRequest.getCategory());
+                    changeLogs.add(new ChangeLog(sb.toString()));
+                }
+               if(!oldExpenseRequest.getSpentOnDate().equals(newExpenseRequest.getSpentOnDate()))
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(StringConstants.SPENT_ON_DATE);
+                    sb.append(" from ");
+                    sb.append(oldExpenseRequest.getSpentOnDate());
+                    sb.append(" to ");
+                    sb.append(newExpenseRequest.getSpentOnDate());
+                    changeLogs.add(new ChangeLog(sb.toString()));
+                }
+                if(!oldExpenseRequest.getSplitType().equals(newExpenseRequest.getSplitType()))
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(StringConstants.SPLIT_TYPE);
+                    sb.append(" from ");
+                    sb.append(oldExpenseRequest.getSplitType());
+                    sb.append(" to ");
+                    sb.append(newExpenseRequest.getSplitType());
+                    changeLogs.add(new ChangeLog(sb.toString()));
+                }
+            }
+        }
+        return changeLogs;
+    }
+
     public void savePaidUsers(List<PaidUser> paidUsers,Long expenseId)
     {
         try{
@@ -108,7 +237,8 @@ public class ExpenseService {
         expenseParticipantService.updateParticipantsExpense(expenseRequest,expenseId);
         //Calculate balance for updated expense
         calculateParticipantsBalance(expenseRequest);
-
+        //Record update Activity
+        createExpenseActivity(ActivityType.EXPENSE_UPDATED,expenseRequest,oldExpenseRequest);
         }
         catch (Exception ex)
         {
@@ -236,6 +366,7 @@ public class ExpenseService {
     {
         Map<Long, Map<Long, Double>> balanceMap = null;
         Long groupId = expenseRequest.getGroupId();
+        BalanceCalculator balanceCalculator = null;
         if(expenseRequest != null && expenseRequest.getPaidUsers().size()>1)
         {
             balanceCalculator = new MultiPayerBalanceCalculator();
@@ -256,6 +387,7 @@ public class ExpenseService {
             expenseRepository.deleteByExpenseId(expenseId);
             expenseParticipantService.deleteExpenseParticipants(expenseId);
             paidUserService.deleteByExpenseId(expenseId);
+            createExpenseActivity(ActivityType.EXPENSE_DELETED,expenseRequest,null);
         }
         catch (Exception ex)
         {
