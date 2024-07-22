@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 @Entity
 @Table(name ="comments")
 @Data
@@ -22,8 +24,12 @@ public class Comments {
     private Long settlementId;
     @Column(name ="expense_id")
     private Long expenseId;
+    @Column(name ="group_id")
+    private Long groupId;
     @Column(name ="commented_by")
     private Long commentedBy;
     @Column(name ="comment")
     private String comment;
+    @Column(name ="create_date")
+    private Date createDate;
 }
