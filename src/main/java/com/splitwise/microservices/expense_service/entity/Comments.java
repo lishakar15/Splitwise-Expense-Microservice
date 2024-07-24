@@ -28,6 +28,8 @@ public class Comments {
     private Long groupId;
     @Column(name ="commented_by")
     private Long commentedBy;
+    @Transient
+    private Long deletedBy;
     @Column(name ="comment")
     private String comment;
     @Column(name ="create_date")

@@ -90,12 +90,12 @@ public class ExpenseService {
                 .groupId(newExpenseRequest.getGroupId())
                 .build();
         StringBuilder sb = new StringBuilder();
-        String userName = StringConstants.EMPTY_STRING;
         if(ActivityType.EXPENSE_CREATED.equals(activityType))
         {
             //Expense Create Activity
-            userName = userClient.getUserName(newExpenseRequest.getCreatedBy());
-            sb.append(userName);
+            sb.append(StringConstants.USER_ID_PREFIX);
+            sb.append(newExpenseRequest.getCreatedBy());
+            sb.append(StringConstants.USER_ID_SUFFIX);
             sb.append(StringConstants.EXPENSE_CREATED);
             sb.append(newExpenseRequest.getExpenseDescription());
             activityRequest.setMessage(sb.toString());
@@ -103,8 +103,9 @@ public class ExpenseService {
         else if(ActivityType.EXPENSE_UPDATED.equals(activityType))
         {
             //Expense Update Activity
-            userName = userClient.getUserName(newExpenseRequest.getCreatedBy());
-            sb.append(userName);
+            sb.append(StringConstants.USER_ID_PREFIX);
+            sb.append(newExpenseRequest.getUpdatedBy());
+            sb.append(StringConstants.USER_ID_SUFFIX);
             sb.append(StringConstants.EXPENSE_UPDATED);
             sb.append(newExpenseRequest.getExpenseDescription());
             activityRequest.setMessage(sb.toString());
@@ -121,8 +122,9 @@ public class ExpenseService {
         else if (ActivityType.EXPENSE_DELETED.equals(activityType))
         {
             //Expense Delete Activity
-            userName = userClient.getUserName(newExpenseRequest.getCreatedBy());
-            sb.append(userName);
+            sb.append(StringConstants.USER_ID_PREFIX);
+            sb.append(newExpenseRequest.getUpdatedBy());
+            sb.append(StringConstants.USER_ID_SUFFIX);
             sb.append(StringConstants.EXPENSE_DELETED);
             sb.append(newExpenseRequest.getExpenseDescription());
             activityRequest.setMessage(sb.toString());
@@ -379,7 +381,7 @@ public class ExpenseService {
     }
 
     @Transactional
-    public void deleteExpenseDetails(Long expenseId) {
+    public void deleteExpenseDetails(Long expenseId,Long loggedInUser) {
         try
         {
             ExpenseRequest expenseRequest = createExpenseRequestFromExpenseId(expenseId);
@@ -387,11 +389,15 @@ public class ExpenseService {
             expenseRepository.deleteByExpenseId(expenseId);
             expenseParticipantService.deleteExpenseParticipants(expenseId);
             paidUserService.deleteByExpenseId(expenseId);
-            createExpenseActivity(ActivityType.EXPENSE_DELETED,expenseRequest,null);
+            if(expenseRequest != null)
+            {
+                expenseRequest.setUpdatedBy(loggedInUser);
+                createExpenseActivity(ActivityType.EXPENSE_DELETED,expenseRequest,null);
+            }
         }
         catch (Exception ex)
         {
-            throw new RuntimeException("Error occurred while processing delete request ");
+            throw new RuntimeException("Error occurred while processing delete request "+ex);
         }
     }
 
@@ -407,5 +413,10 @@ public class ExpenseService {
         ExpenseRequest expenseRequest = expenseMapper.createExpenseRequestFromExpenseId(expense,participantList,
                 paidUsers);
         return expenseRequest;
+    }
+
+    public String getExpenseDescById(Long expenseId)
+    {
+       return expenseRepository.getExpenseDescById(expenseId);
     }
 }

@@ -2,6 +2,9 @@ package com.splitwise.microservices.expense_service.constants;
 
 public class StringConstants {
     public static final String EMPTY_STRING = "";
+    public static final String USER_ID_PREFIX = "{userId:";
+    public static final String USER_ID_SUFFIX = "}";
+
     public static final String EXPENSE_CREATED = " created an expense ";
     public static final String EXPENSE_UPDATED = " updated the expense ";
     public static final String EXPENSE_DELETED = " deleted the expense ";
@@ -19,6 +22,7 @@ public class StringConstants {
     public static final String SPENT_ON_DATE = "Spend on date";
     public static final String SPLIT_TYPE = "Split Type";
     public static final String PAYMENT_METHOD = "Payment Type";
+
 
 
 

@@ -27,6 +27,7 @@ public class ExpenseRequest {
     private List<ParticipantShare> participantShareList;
     private String splitType;
     private Long createdBy;
+    private Long updatedBy;
 
     @Override
     public boolean equals(Object o) {

@@ -77,16 +77,16 @@ public class CommentController {
         return new ResponseEntity<>(commentsList,HttpStatus.OK);
 
     }
-    @DeleteMapping("/delete-comment/{commentId}")
-    public ResponseEntity<String> deleteComment(@PathVariable("commentId") Long commentId)
+    @DeleteMapping("/delete-comment/{commentId}/{loggedInUser}")
+    public ResponseEntity<String> deleteComment(@PathVariable("commentId") Long commentId,@PathVariable("loggedInUser") Long loggedInUser)
     {
-        if(commentId == null)
+        if(commentId == null || loggedInUser == null)
         {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try
         {
-            commentService.deleteCommentById(commentId);
+            commentService.deleteCommentById(commentId,loggedInUser);
             return new ResponseEntity<>(HttpStatus.OK);
         }
         catch(Exception ex)

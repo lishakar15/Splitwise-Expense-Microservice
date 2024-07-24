@@ -4,6 +4,8 @@ import com.splitwise.microservices.expense_service.exception.ExpenseException;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
 import com.splitwise.microservices.expense_service.service.ExpenseParticipantService;
 import com.splitwise.microservices.expense_service.service.ExpenseService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,7 @@ public class ExpenseController {
     ExpenseService expenseService;
     @Autowired
     ExpenseParticipantService expenseParticipantService;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExpenseController.class);
 
     @PostMapping("/add-expense")
     public ResponseEntity<String> addNewExpense(@RequestBody ExpenseRequest expenseRequest)
@@ -65,16 +68,16 @@ public class ExpenseController {
         return new ResponseEntity<>("Expense updated successfully!",HttpStatus.OK);
     }
 
-    @DeleteMapping("delete-expense/{expenseId}")
-    public ResponseEntity<String> deleteExpense(@PathVariable("expenseId") Long expenseId)
+    @DeleteMapping("delete-expense/{expenseId}/{loggedInUser}")
+    public ResponseEntity<String> deleteExpense(@PathVariable("expenseId") Long expenseId,@PathVariable("loggedInUser") Long loggedInUser)
     {
         try
         {
-            expenseService.deleteExpenseDetails(expenseId);
+            expenseService.deleteExpenseDetails(expenseId,loggedInUser);
         }
         catch (Exception ex)
         {
-            System.out.println(ex.getMessage());
+            LOGGER.error("Error occurred while deleting expense "+ex);
             return new ResponseEntity<>(ex.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new ResponseEntity<>("Expense deleted successfully!!",HttpStatus.OK);
