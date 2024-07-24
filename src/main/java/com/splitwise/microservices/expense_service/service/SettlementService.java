@@ -59,30 +59,40 @@ public class SettlementService {
                 .settlementId(newSettlement.getSettlementId())
                 .build();
         StringBuilder sb = new StringBuilder();
-        String payerName = userClient.getUserName(newSettlement.getPaidBy());
-        String receiverName = userClient.getUserName(newSettlement.getPaidTo());;
+        Long payerId = newSettlement.getPaidBy();
+        Long receiverId = newSettlement.getPaidTo();;
         if(ActivityType.PAYMENT_CREATED.equals(activityType))
         {
             //Payment Create Activity
-            String createdUserName = userClient.getUserName(newSettlement.getCreatedBy());
-            sb.append(createdUserName);
+            sb.append(StringConstants.USER_ID_PREFIX);
+            sb.append(newSettlement.getCreatedBy());
+            sb.append(StringConstants.USER_ID_SUFFIX);
             sb.append(StringConstants.PAYMENT_CREATED);
             sb.append(" from ");
-            sb.append(payerName);
+            sb.append(StringConstants.USER_ID_PREFIX);
+            sb.append(payerId);
+            sb.append(StringConstants.USER_ID_SUFFIX);
             sb.append(" to ");
-            sb.append(receiverName);
+            sb.append(StringConstants.USER_ID_PREFIX);
+            sb.append(receiverId);
+            sb.append(StringConstants.USER_ID_SUFFIX);
             activityRequest.setMessage(sb.toString());
         }
         if(ActivityType.PAYMENT_UPDATED.equals(activityType))
         {
             //Payment Update Activity
-            String modifiedUserName = userClient.getUserName(newSettlement.getModifiedBy());
-            sb.append(modifiedUserName);
+            sb.append(StringConstants.USER_ID_PREFIX);
+            sb.append(newSettlement.getModifiedBy());
+            sb.append(StringConstants.USER_ID_SUFFIX);
             sb.append(StringConstants.PAYMENT_UPDATED);
             sb.append(" from ");
-            sb.append(payerName);
+            sb.append(StringConstants.USER_ID_PREFIX);
+            sb.append(payerId);
+            sb.append(StringConstants.USER_ID_SUFFIX);
             sb.append(" to ");
-            sb.append(receiverName);
+            sb.append(StringConstants.USER_ID_PREFIX);
+            sb.append(receiverId);
+            sb.append(StringConstants.USER_ID_SUFFIX);
             activityRequest.setMessage(sb.toString());
             if(oldSettlement != null)
             {
@@ -96,13 +106,18 @@ public class SettlementService {
         if(ActivityType.PAYMENT_DELETED.equals(activityType))
         {
             //Payment Delete Activity
-            String deletedUserName = userClient.getUserName(newSettlement.getModifiedBy());
-            sb.append(deletedUserName);
+            sb.append(StringConstants.USER_ID_PREFIX);
+            sb.append(newSettlement.getModifiedBy());
+            sb.append(StringConstants.USER_ID_SUFFIX);
             sb.append(StringConstants.PAYMENT_DELETED);
             sb.append(" from ");
-            sb.append(payerName);
+            sb.append(StringConstants.USER_ID_PREFIX);
+            sb.append(payerId);
+            sb.append(StringConstants.USER_ID_SUFFIX);
             sb.append(" to ");
-            sb.append(receiverName);
+            sb.append(StringConstants.USER_ID_PREFIX);
+            sb.append(receiverId);
+            sb.append(StringConstants.USER_ID_SUFFIX);
             activityRequest.setMessage(sb.toString());
         }
         try

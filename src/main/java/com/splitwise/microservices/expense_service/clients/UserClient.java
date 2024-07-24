@@ -8,4 +8,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 public interface UserClient {
     @GetMapping("/user/get-user-name/{userId}")
     public String getUserName(@PathVariable("userId") Long userId);
+    @GetMapping("/group/get-group-name/{groupId}")
+    public String getGroupName(@PathVariable("groupId") Long groupId);
 }

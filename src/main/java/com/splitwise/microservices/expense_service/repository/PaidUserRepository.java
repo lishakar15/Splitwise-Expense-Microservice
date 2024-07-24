@@ -14,8 +14,9 @@ import java.util.List;
 public interface PaidUserRepository extends JpaRepository<PaidUser,Long> {
 
     List<PaidUser> findByExpenseId(Long expenseId);
-    @Transactional
+
     @Modifying
-    @Query(name = "delete from PaidUser p where p.expenseId =:expenseId")
-    boolean deleteByExpenseId(@Param("expenseId") Long expenseId);
+    @Transactional
+    @Query(value = "delete from PaidUser p where p.expenseId =:expenseId")
+    void deleteByExpenseId(@Param("expenseId") Long expenseId);
 }
