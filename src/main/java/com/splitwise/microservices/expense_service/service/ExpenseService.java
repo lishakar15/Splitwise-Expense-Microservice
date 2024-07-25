@@ -1,5 +1,6 @@
 package com.splitwise.microservices.expense_service.service;
 
+import com.google.gson.Gson;
 import com.splitwise.microservices.expense_service.clients.UserClient;
 import com.splitwise.microservices.expense_service.constants.StringConstants;
 import com.splitwise.microservices.expense_service.entity.Balance;
@@ -132,7 +133,9 @@ public class ExpenseService {
         //Send request to the producer
         try
         {
-            kafkaProducer.sendActivityMessage(activityRequest);
+            Gson gson = new Gson();
+            String activityJson = gson.toJson(activityRequest);
+            kafkaProducer.sendActivityMessage(activityJson);
         }
         catch (Exception ex)
         {

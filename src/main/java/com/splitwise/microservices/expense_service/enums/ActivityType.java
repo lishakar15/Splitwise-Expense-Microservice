@@ -8,7 +8,5 @@ public enum ActivityType {
     PAYMENT_UPDATED,
     PAYMENT_DELETED,
     COMMENT_ADDED,
-    COMMENT_DELETED,
-    USER_ADDED,
-    USER_REMOVED
+    COMMENT_DELETED
 }

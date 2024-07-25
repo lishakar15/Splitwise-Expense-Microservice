@@ -17,9 +17,6 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class ActivityRequest {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long activityId;
     private Long groupId;
     private Long settlementId;
     private Long expenseId;
