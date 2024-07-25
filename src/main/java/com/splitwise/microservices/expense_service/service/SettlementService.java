@@ -1,5 +1,6 @@
 package com.splitwise.microservices.expense_service.service;
 
+import com.google.gson.Gson;
 import com.splitwise.microservices.expense_service.clients.UserClient;
 import com.splitwise.microservices.expense_service.constants.StringConstants;
 import com.splitwise.microservices.expense_service.entity.Settlement;
@@ -122,7 +123,9 @@ public class SettlementService {
         }
         try
         {
-            kafkaProducer.sendActivityMessage(activityRequest);
+            Gson gson = new Gson();
+            String activityJson = gson.toJson(activityRequest);
+            kafkaProducer.sendActivityMessage(activityJson);
         }
         catch(Exception ex)
         {
@@ -191,11 +194,12 @@ public class SettlementService {
         try
         {
             Settlement existingSettlement = getSettlementById(settlementId);
-            existingSettlement.setModifiedBy(loggedInUserId);
+            Settlement oldSettlement = new Settlement(existingSettlement);
+            oldSettlement.setModifiedBy(loggedInUserId);
             balanceService.revertPreviousBalanceForSettlement(existingSettlement);
             settlementRepository.deleteSettlementById(settlementId);
             isDeleted = true;
-            createSettlementActivity(ActivityType.PAYMENT_DELETED,existingSettlement,null);
+            createSettlementActivity(ActivityType.PAYMENT_DELETED,oldSettlement,null);
         }
         catch(Exception ex)
         {

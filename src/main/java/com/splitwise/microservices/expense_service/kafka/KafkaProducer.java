@@ -14,9 +14,9 @@ public class KafkaProducer {
     @Value("${kafka.topic.name}")
     private String topic;
 
-    public void sendActivityMessage(ActivityRequest activityRequest)
+    public void sendActivityMessage(String activityMsg)
     {
-        kafkaTemplate.send(topic,activityRequest);
+        kafkaTemplate.send(topic,activityMsg);
     }
 
 }
