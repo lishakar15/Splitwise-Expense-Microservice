@@ -1,6 +1,7 @@
 package com.splitwise.microservices.expense_service.external;
 
-import jakarta.persistence.*;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,5 +15,5 @@ import java.util.Date;
 @Builder
 public class ChangeLog {
 
-    public String changeMessage;
+    private String changeMessage;
 }
