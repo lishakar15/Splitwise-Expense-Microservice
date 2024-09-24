@@ -1,0 +1,91 @@
+{
+	"info": {
+		"_postman_id": "75d759fc-bc7f-4f39-b5e5-bd0884ec546d",
+		"name": "Settlement",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Settle Amount",
+			"id": "5065810f-498b-417d-8005-fe9016a3bdb1",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"groupId\" : 1,\r\n    \"paidBy\" : 1,\r\n    \"paidTo\" : 2,\r\n    \"createdBy\" : 1,\r\n    \"modifiedBy\" : null,\r\n    \"amountPaid\" : \t25,\r\n    \"paymentMethod\" : \"Cash\",\r\n    \"settlementDate\" : null,\r\n    \"lastUpdateDate\" : null\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:8081/settlement/settleAmount"
+			},
+			"response": []
+		},
+		{
+			"name": "Update Settlement",
+			"id": "5053498e-8442-4d2d-957d-0fb474538649",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"settlementId\" : 1,\r\n    \"groupId\" : 1,\r\n    \"paidBy\" : 1,\r\n    \"paidTo\" : 2,\r\n    \"createdBy\" : 1,\r\n    \"modifiedBy\" : 2,\r\n    \"amountPaid\" : \t70,\r\n    \"paymentMethod\" : \"GPay\",\r\n    \"settlementDate\" : null,\r\n    \"lastUpdateDate\" : null\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:8081/settlement/updateSettlement"
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Settlement",
+			"id": "19ccc4b0-1cea-493e-a9b2-bfadc8c18a93",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": "http://localhost:8081/settlement/deleteSettlement/1/1"
+			},
+			"response": []
+		},
+		{
+			"name": "Get SetllementById",
+			"id": "1dade1c5-57d8-41e8-87bb-a35f98e6c212",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "http://localhost:8081/settlement/getSettlementDetails/2"
+			},
+			"response": []
+		},
+		{
+			"name": "Get All SettlementsByGroupId",
+			"id": "61221a09-7132-4256-8020-fd457f8db5a8",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}
