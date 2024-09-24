@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/expense")
+@CrossOrigin(origins = "http://localhost:3000")
 public class ExpenseController {
     @Autowired
     ExpenseService expenseService;
