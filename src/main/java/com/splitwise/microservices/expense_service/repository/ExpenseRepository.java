@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -15,4 +16,6 @@ public interface ExpenseRepository extends JpaRepository<Expense,Long> {
     void deleteByExpenseId(Long expenseId);
     @Query("select e.expenseDescription from Expense e where e.expenseId =:expenseId")
     String getExpenseDescById(@Param("expenseId") Long expenseId);
+    @Query("select e.expenseId from Expense e where e.groupId =:groupId")
+    List<Long> getExpensesByGroupId(@Param("groupId") Long groupId);
 }
