@@ -1,6 +1,7 @@
 package com.splitwise.microservices.expense_service.controller;
 
 import com.splitwise.microservices.expense_service.exception.ExpenseException;
+import com.splitwise.microservices.expense_service.model.ExpenseResponse;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
 import com.splitwise.microservices.expense_service.service.ExpenseParticipantService;
 import com.splitwise.microservices.expense_service.service.ExpenseService;
@@ -10,6 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 @RestController
@@ -22,6 +26,24 @@ public class ExpenseController {
     ExpenseParticipantService expenseParticipantService;
     private static final Logger LOGGER = LoggerFactory.getLogger(ExpenseController.class);
 
+    @GetMapping("/get-expenses/{groupId}")
+    public ResponseEntity<List<ExpenseResponse>> getExpensesByGroupId(@PathVariable("groupId") Long groupId)
+    {
+        if(groupId == null)
+        {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        List<ExpenseResponse> expenseResponse = new ArrayList<>();
+        try
+        {
+            expenseResponse = expenseService.getExpensesByGroupId(groupId);
+        }
+        catch (Exception ex)
+        {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<>(expenseResponse, HttpStatus.OK);
+    }
     @PostMapping("/add-expense")
     public ResponseEntity<String> addNewExpense(@RequestBody ExpenseRequest expenseRequest)
     {
