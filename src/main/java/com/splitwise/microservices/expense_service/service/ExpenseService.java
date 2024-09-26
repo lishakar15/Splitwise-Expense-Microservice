@@ -13,8 +13,10 @@ import com.splitwise.microservices.expense_service.external.ActivityRequest;
 import com.splitwise.microservices.expense_service.external.ChangeLog;
 import com.splitwise.microservices.expense_service.kafka.KafkaProducer;
 import com.splitwise.microservices.expense_service.mapper.ExpenseMapper;
+import com.splitwise.microservices.expense_service.model.ExpenseResponse;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
 import com.splitwise.microservices.expense_service.repository.ExpenseRepository;
+import com.splitwise.microservices.expense_service.repository.PaidUserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -421,5 +423,33 @@ public class ExpenseService {
     public String getExpenseDescById(Long expenseId)
     {
        return expenseRepository.getExpenseDescById(expenseId);
+    }
+
+    public List<ExpenseResponse> getExpensesByGroupId(Long groupId) {
+        List<ExpenseResponse> expenseResponseList = new ArrayList<>();
+        try {
+            List<Long> expenseIds = expenseRepository.getExpensesByGroupId(groupId);
+            for(Long expenseId : expenseIds)
+            {
+                //Get Expense Data
+                Expense expense = expenseRepository.findByExpenseId(expenseId).get();
+                //Get Paid Users List
+                List<PaidUser> paidUsers = paidUserService.findByExpenseId(expenseId);
+                //Get Participants List
+                List<ExpenseParticipant> expenseParticipants= expenseParticipantService.getParticipantsByExpenseId(expenseId);
+                //Get userId and userName Map using feign client
+                Map<Long, String> userNameMap = userClient.getUserNameMapByGroupId(groupId);
+                //Prepare Expense Response
+                ExpenseResponse expenseResponse = expenseMapper.createExpenseResonse(expense,expenseParticipants,paidUsers,userNameMap);
+                expenseResponseList.add(expenseResponse);
+            }
+        }
+        catch (Exception ex)
+        {
+            LOGGER.error("Exception occurred while fetching Expenses", ex.getMessage());
+            throw ex;
+        }
+
+        return expenseResponseList;
     }
 }
