@@ -23,7 +23,26 @@ public class PaidUserService {
     }
     @Transactional
     @Modifying
-    public void deleteByExpenseId(Long expenseId) {
-        paidUserRepository.deleteByExpenseId(expenseId);
+    public int deleteByExpenseId(Long expenseId) {
+        return paidUserRepository.deleteByExpenseId(expenseId);
+    }
+    public void updatePaidUsers(List<PaidUser> paidUsers,Long expenseId)
+    {
+        try{
+            int deletedRows = deleteByExpenseId(expenseId);
+            if(deletedRows>0)
+            {
+                for(PaidUser paidUser : paidUsers)
+                {
+                    paidUser.setExpenseId(expenseId);
+                    savePaidUser(paidUser);
+                }
+            }
+
+        }
+        catch(Exception ex)
+        {
+            throw new RuntimeException("Error occurred while updating paid User details",ex);
+        }
     }
 }
