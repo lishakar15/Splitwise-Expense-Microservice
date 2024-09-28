@@ -18,5 +18,5 @@ public interface PaidUserRepository extends JpaRepository<PaidUser,Long> {
     @Modifying
     @Transactional
     @Query(value = "delete from PaidUser p where p.expenseId =:expenseId")
-    void deleteByExpenseId(@Param("expenseId") Long expenseId);
+    int deleteByExpenseId(@Param("expenseId") Long expenseId);
 }

@@ -71,7 +71,7 @@ public class ExpenseService {
                 //Todo: Add validation for total amount equals to payers` sum (On request)
                 //Calculate and save individual balances users owe
                 saveParticipantsBalance(expenseRequest);
-                createExpenseActivity(ActivityType.EXPENSE_CREATED,expenseRequest,null);
+                //createExpenseActivity(ActivityType.EXPENSE_CREATED,expenseRequest,null);
             }
             else
             {
@@ -207,14 +207,16 @@ public class ExpenseService {
         return changeLogs;
     }
 
+
+
     public void savePaidUsers(List<PaidUser> paidUsers,Long expenseId)
     {
         try{
-            for(PaidUser paidUser : paidUsers)
-            {
-                paidUser.setExpenseId(expenseId);
-                paidUserService.savePaidUser(paidUser);
-            }
+                for(PaidUser paidUser : paidUsers)
+                {
+                    paidUser.setExpenseId(expenseId);
+                    paidUserService.savePaidUser(paidUser);
+                }
         }
         catch(Exception ex)
         {
@@ -239,13 +241,13 @@ public class ExpenseService {
         List<PaidUser> paidUsers = expenseRequest.getPaidUsers();
         //Save Expense and Paid Users
         expenseRepository.save(updatedExpense);
-        savePaidUsers(paidUsers,expenseId);
+        paidUserService.updatePaidUsers(paidUsers,expenseId);
         //Save Participants
         expenseParticipantService.updateParticipantsExpense(expenseRequest,expenseId);
         //Calculate balance for updated expense
         calculateParticipantsBalance(expenseRequest);
         //Record update Activity
-        createExpenseActivity(ActivityType.EXPENSE_UPDATED,expenseRequest,oldExpenseRequest);
+        //createExpenseActivity(ActivityType.EXPENSE_UPDATED,expenseRequest,oldExpenseRequest);
         }
         catch (Exception ex)
         {
@@ -397,7 +399,7 @@ public class ExpenseService {
             if(expenseRequest != null)
             {
                 expenseRequest.setUpdatedBy(loggedInUser);
-                createExpenseActivity(ActivityType.EXPENSE_DELETED,expenseRequest,null);
+                //createExpenseActivity(ActivityType.EXPENSE_DELETED,expenseRequest,null);
             }
         }
         catch (Exception ex)
