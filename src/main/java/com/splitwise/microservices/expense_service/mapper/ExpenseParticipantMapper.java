@@ -39,31 +39,37 @@ public class ExpenseParticipantMapper {
     public List<ParticipantShare> getParticipantShareListFromParticipantList(List<ExpenseParticipant> participantList)
     {
         List<ParticipantShare> participantShareList = new ArrayList<>();
-        for(ExpenseParticipant expenseParticipant : participantList)
+        if(participantList != null )
         {
-            ParticipantShare participantShare = ParticipantShare.builder()
-                    .userId(expenseParticipant.getParticipantId())
-                    .shareAmount(expenseParticipant.getSettlementAmount())
-                    .isPaidUser(expenseParticipant.getIsPayer())
-                    .build();
-            participantShareList.add(participantShare);
+            for(ExpenseParticipant expenseParticipant : participantList)
+            {
+                ParticipantShare participantShare = ParticipantShare.builder()
+                        .userId(expenseParticipant.getParticipantId())
+                        .shareAmount(expenseParticipant.getSettlementAmount())
+                        .isPaidUser(expenseParticipant.getIsPayer())
+                        .build();
+                participantShareList.add(participantShare);
+            }
         }
+
         return participantShareList;
     }
     public List<ExpenseParticipantVO> getParticipantsFromParticipantList(List<ExpenseParticipant> participantList, Map<Long,String> userNameMap)
     {
         List<ExpenseParticipantVO> expenseParticipants = new ArrayList<>();
-        for(ExpenseParticipant expenseParticipant : participantList)
+        if(participantList !=null && userNameMap != null)
         {
-            ExpenseParticipantVO expenseParticipantVO = ExpenseParticipantVO.builder()
-                    .userId(expenseParticipant.getParticipantId())
-                    .userName(userNameMap.get(expenseParticipant.getParticipantId()))
-                    .shareAmount(expenseParticipant.getSettlementAmount())
-                    .isPaidUser(expenseParticipant.getIsPayer())
-                    .build();
-            expenseParticipants.add(expenseParticipantVO);
+            for(ExpenseParticipant expenseParticipant : participantList)
+            {
+                ExpenseParticipantVO expenseParticipantVO = ExpenseParticipantVO.builder()
+                        .userId(expenseParticipant.getParticipantId())
+                        .userName(userNameMap.get(expenseParticipant.getParticipantId()))
+                        .shareAmount(expenseParticipant.getSettlementAmount())
+                        .isPaidUser(expenseParticipant.getIsPayer())
+                        .build();
+                expenseParticipants.add(expenseParticipantVO);
+            }
         }
-
         return expenseParticipants;
     }
 }

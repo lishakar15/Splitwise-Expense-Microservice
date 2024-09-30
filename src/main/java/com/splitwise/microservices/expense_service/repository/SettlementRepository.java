@@ -16,10 +16,10 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
 
     @Query(value ="select s from Settlement s where s.groupId =:groupId")
     List<Settlement> getAllSettlementByGroupId(@Param("groupId") Long groupId);
-
+    @Query(value="select s from Settlement s where s.paidBy =:userId or s.paidTo =:userId ")
+    List<Settlement> getAllSettlementsByUserId(@Param("userId") Long userId);
     @Modifying
     @Transactional
     @Query(value = "delete from Settlement s where s.settlementId =:settlementId")
     void deleteSettlementById(@Param("settlementId")Long settlementId);
-
 }
