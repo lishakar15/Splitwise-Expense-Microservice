@@ -448,7 +448,7 @@ public class ExpenseService {
         }
         catch (Exception ex)
         {
-            LOGGER.error("Exception occurred while fetching Expenses", ex.getMessage());
+            LOGGER.error("Exception occurred while fetching Expenses" + ex.getMessage());
             throw ex;
         }
 

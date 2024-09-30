@@ -1,6 +1,8 @@
 package com.splitwise.microservices.expense_service.controller;
 
+import com.splitwise.microservices.expense_service.clients.UserClient;
 import com.splitwise.microservices.expense_service.entity.Comments;
+import com.splitwise.microservices.expense_service.model.CommentsResponse;
 import com.splitwise.microservices.expense_service.service.CommentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,43 +40,44 @@ public class CommentController {
     }
 
     @GetMapping("/get-comments/expense/{expenseId}")
-    public ResponseEntity<List<Comments>> getCommentsByExpenseId(@PathVariable("expenseId") Long expenseId)
+    public ResponseEntity<List<CommentsResponse>> getCommentsByExpenseId(@PathVariable("expenseId") Long expenseId)
     {
         if(expenseId == null)
         {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        List<Comments> commentsList;
+        List<CommentsResponse> commentsResponseList;
         try
         {
-            commentsList = commentService.getCommentsByExpenseId(expenseId);
+            commentsResponseList = commentService.getCommentsByExpenseId(expenseId);
         }
         catch(Exception ex)
         {
-            LOGGER.error("Error occurred while retrieving comments "+ex);
+            LOGGER.error("Error occurred while retrieving expense comments "+ex);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>(commentsList,HttpStatus.OK);
+        return new ResponseEntity<>(commentsResponseList,HttpStatus.OK);
     }
+
     @GetMapping("/get-comments/settlement/{settlementId}")
-    public ResponseEntity<List<Comments>> getCommentsBySettlementId(@PathVariable("settlementId") Long settlementId)
+    public ResponseEntity<List<CommentsResponse>> getCommentsBySettlementId(@PathVariable("settlementId") Long settlementId)
     {
 
         if(settlementId == null)
         {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        List<Comments> commentsList;
+        List<CommentsResponse> commentsResponseList;
         try
         {
-            commentsList = commentService.getCommentsBySettlementId(settlementId);
+            commentsResponseList = commentService.getCommentsBySettlementId(settlementId);
         }
         catch(Exception ex)
         {
-            LOGGER.error("Error occurred while retrieving comments "+ex);
+            LOGGER.error("Error occurred while retrieving settlement comments "+ex);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>(commentsList,HttpStatus.OK);
+        return new ResponseEntity<>(commentsResponseList,HttpStatus.OK);
 
     }
     @DeleteMapping("/delete-comment/{commentId}/{loggedInUser}")

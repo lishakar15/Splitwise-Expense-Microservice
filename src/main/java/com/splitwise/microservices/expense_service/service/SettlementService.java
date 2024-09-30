@@ -8,6 +8,8 @@ import com.splitwise.microservices.expense_service.enums.ActivityType;
 import com.splitwise.microservices.expense_service.external.ActivityRequest;
 import com.splitwise.microservices.expense_service.external.ChangeLog;
 import com.splitwise.microservices.expense_service.kafka.KafkaProducer;
+import com.splitwise.microservices.expense_service.mapper.SettlementMapper;
+import com.splitwise.microservices.expense_service.model.SettlementResponse;
 import com.splitwise.microservices.expense_service.repository.SettlementRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,9 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class SettlementService {
@@ -30,6 +30,8 @@ public class SettlementService {
     UserClient userClient;
     @Autowired
     KafkaProducer kafkaProducer;
+    @Autowired
+    SettlementMapper settlementMapper;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SettlementService.class);
 
@@ -41,7 +43,7 @@ public class SettlementService {
             balanceService.calculateBalanceForSettlement(settlement);
 
             Settlement savedSettlement =  settlementRepository.save(settlement);
-            createSettlementActivity(ActivityType.PAYMENT_CREATED,settlement,null);
+            //createSettlementActivity(ActivityType.PAYMENT_CREATED,settlement,null);
             return savedSettlement;
         }
         catch(Exception ex)
@@ -172,83 +174,115 @@ public class SettlementService {
         Optional<Settlement> optional = settlementRepository.findById(settlementId);
         return optional.isPresent()? optional.get() : null;
     }
-    public List<Settlement> getAllSettlementByGroupId(Long groupId)
+    public List<SettlementResponse> getAllSettlementByGroupId(Long groupId)
     {
         List<Settlement> settlements = new ArrayList<>();
         try
         {
             settlements = settlementRepository.getAllSettlementByGroupId(groupId);
+            //Get the userId and userName Map
+            Map<Long, String> userNameMap =  userClient.getUserNameMapByGroupId(groupId);
+            //Get Group Name from user Microservice
+            String groupName = userClient.getGroupNameByGroupId(groupId);
+            Map<Long,String> groupNameMap = new HashMap<>();
+            groupNameMap.put(groupId,groupName);
+            //Create Settlement Response
+            return settlementMapper.createSettlementResponse(settlements,userNameMap,groupNameMap);
         }
         catch(Exception ex)
         {
-            //Need to throw exception
+            LOGGER.error("Error occurred while fetching data in getAllSettlementByGroupId() {}", ex.getMessage());
         }
-        return settlements;
+        return List.of();
     }
 
-
-
-    public boolean deleteSettlementById(Long settlementId,Long loggedInUserId)
+    public List<SettlementResponse> getAllSettlementsByUserId(Long userId)
     {
-        boolean isDeleted = false;
-        try
-        {
-            Settlement existingSettlement = getSettlementById(settlementId);
-            Settlement oldSettlement = new Settlement(existingSettlement);
-            oldSettlement.setModifiedBy(loggedInUserId);
-            balanceService.revertPreviousBalanceForSettlement(existingSettlement);
-            settlementRepository.deleteSettlementById(settlementId);
-            isDeleted = true;
-            createSettlementActivity(ActivityType.PAYMENT_DELETED,oldSettlement,null);
+        List<SettlementResponse> settlementResponseList = new ArrayList<>();
+        Set<Long> uniqueUserIds = new HashSet<>();
+        try{
+            List<Settlement> settlements = settlementRepository.getAllSettlementsByUserId(userId);
+            if(settlements != null) {
+                for(Settlement settlement : settlements) {
+                    uniqueUserIds.add(settlement.getPaidBy());
+                    uniqueUserIds.add(settlement.getPaidTo());
+                }
+                List<Long> allUserIds = new ArrayList<>(uniqueUserIds);
+                //Get userId and userName map
+                Map<Long,String> userNameMap = userClient.getUserNameMapByUserIds(allUserIds);
+                //Get the groupId and groupName Map using user id
+                Map<Long, String> groupNameMap = userClient.getGroupNameMap(userId);
+                settlementResponseList = settlementMapper.createSettlementResponse(settlements,userNameMap,groupNameMap);
+            }
         }
         catch(Exception ex)
         {
-            //Need to throw exception
+            LOGGER.error("Error occurred while fetching data in getAllSettlementsByUserId() {}", ex.getMessage());
         }
-        return isDeleted;
+        return settlementResponseList;
     }
 
+public boolean deleteSettlementById(Long settlementId,Long loggedInUserId)
+{
+    boolean isDeleted = false;
+    try
+    {
+        Settlement existingSettlement = getSettlementById(settlementId);
+        Settlement oldSettlement = new Settlement(existingSettlement);
+        oldSettlement.setModifiedBy(loggedInUserId);
+        balanceService.revertPreviousBalanceForSettlement(existingSettlement);
+        settlementRepository.deleteSettlementById(settlementId);
+        isDeleted = true;
+        //createSettlementActivity(ActivityType.PAYMENT_DELETED,oldSettlement,null);
+    }
+    catch(Exception ex)
+    {
+        //Need to throw exception
+    }
+    return isDeleted;
+}
 
-    public ResponseEntity<Settlement> updateSettlement(Settlement settlement) {
-        if(settlement == null)
-        {
+
+public ResponseEntity<Settlement> updateSettlement(Settlement settlement) {
+    if(settlement == null)
+    {
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    }
+    try
+    {
+        Settlement existingSettlement = getSettlementById(settlement.getSettlementId());
+        if (existingSettlement == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        try
-        {
-            Settlement existingSettlement = getSettlementById(settlement.getSettlementId());
-            if (existingSettlement == null) {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
-            Settlement oldSettlement = new Settlement(existingSettlement);
-            balanceService.revertPreviousBalanceForSettlement(existingSettlement);
-            //Update new Settlement
-            balanceService.calculateBalanceForSettlement(settlement);
-            Settlement updatedSettlement =  settlementRepository.save(settlement);
-            //Record Update Activity
-            createSettlementActivity(ActivityType.PAYMENT_UPDATED,settlement,oldSettlement);
+        Settlement oldSettlement = new Settlement(existingSettlement);
+        balanceService.revertPreviousBalanceForSettlement(existingSettlement);
+        //Update new Settlement
+        balanceService.calculateBalanceForSettlement(settlement);
+        Settlement updatedSettlement =  settlementRepository.save(settlement);
+        //Record Update Activity
+        //createSettlementActivity(ActivityType.PAYMENT_UPDATED,settlement,oldSettlement);
 
-            return new ResponseEntity<>(updatedSettlement, HttpStatus.OK);
-        } catch (Exception ex) {
-            LOGGER.error("Error occurred while updating expense "+ex);
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(updatedSettlement, HttpStatus.OK);
+    } catch (Exception ex) {
+        LOGGER.error("Error occurred while updating expense "+ex);
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+
+public Settlement getSettlementDetailsByID(Long settlementId) {
+    Settlement settlement = null;
+    try
+    {
+        Optional<Settlement> optional = settlementRepository.findById(settlementId);
+        if(optional.isPresent())
+        {
+            settlement = optional.get();
         }
     }
-
-    public Settlement getSettlementDetailsByID(Long settlementId) {
-        Settlement settlement = null;
-        try
-        {
-            Optional<Settlement> optional = settlementRepository.findById(settlementId);
-            if(optional.isPresent())
-            {
-                settlement = optional.get();
-            }
-        }
-        catch(Exception ex)
-        {
-            //Need to throw Exception
-        }
-        return settlement;
+    catch(Exception ex)
+    {
+        //Need to throw Exception
     }
+    return settlement;
+}
 }
