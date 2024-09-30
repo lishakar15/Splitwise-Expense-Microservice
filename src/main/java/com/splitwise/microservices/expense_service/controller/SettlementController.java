@@ -1,6 +1,7 @@
 package com.splitwise.microservices.expense_service.controller;
 
 import com.splitwise.microservices.expense_service.entity.Settlement;
+import com.splitwise.microservices.expense_service.model.SettlementResponse;
 import com.splitwise.microservices.expense_service.service.SettlementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpRequest;
@@ -37,8 +38,18 @@ public class SettlementController {
         {
             return new ResponseEntity<>("Invalid request", HttpStatus.BAD_REQUEST);
         }
-        List<Settlement> settlements = settlementService.getAllSettlementByGroupId(groupId);
-        return new ResponseEntity<>(settlements,HttpStatus.OK);
+        List<SettlementResponse> settlementResponse = settlementService.getAllSettlementByGroupId(groupId);
+        return new ResponseEntity<>(settlementResponse,HttpStatus.OK);
+    }
+    @GetMapping("/getAllUserSettlements/{userId}")
+    public ResponseEntity<?> getAllUserSettlementRecords(@PathVariable("userId") Long userId)
+    {
+        if(userId == null)
+        {
+            return new ResponseEntity<>("Invalid request", HttpStatus.BAD_REQUEST);
+        }
+        List<SettlementResponse> settlementResponse = settlementService.getAllSettlementsByUserId(userId);
+        return new ResponseEntity<>(settlementResponse,HttpStatus.OK);
     }
 
     @GetMapping("/getSettlementDetails/{settlementId}")
@@ -65,7 +76,7 @@ public class SettlementController {
             return new ResponseEntity<>("Invalid settlement request", HttpStatus.BAD_REQUEST);
         }
         settlementService.updateSettlement(settlement);
-        return new ResponseEntity<>("Expense updated successfully", HttpStatus.OK);
+        return new ResponseEntity<>("Settlement updated successfully", HttpStatus.OK);
     }
     @DeleteMapping("/deleteSettlement/{settlementId}/{loggedInUserId}")
     public ResponseEntity<String> deleteSettlementById(@PathVariable("settlementId") Long settlementId,
@@ -80,7 +91,7 @@ public class SettlementController {
         {
             return new ResponseEntity<>("Error occurred while deleting settlement", HttpStatus.NOT_FOUND);
         }
-        return new ResponseEntity<>("Expense deleted successfully",HttpStatus.OK);
+        return new ResponseEntity<>("Settlement deleted successfully",HttpStatus.OK);
     }
 
 }

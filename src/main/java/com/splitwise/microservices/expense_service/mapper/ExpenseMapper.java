@@ -82,16 +82,18 @@ public class ExpenseMapper {
     public List<PaidUsersVO> getPaidUsersVoFromPaidUsersList(List<PaidUser> paidUserList, Map<Long,String> userNameMap)
     {
         List<PaidUsersVO> paidUsers = new ArrayList<>();
-        for(PaidUser paidUser : paidUserList)
+        if(paidUserList != null && userNameMap != null)
         {
-            PaidUsersVO paidUserVO = PaidUsersVO.builder()
-                    .userId(paidUser.getUserId())
-                    .userName(userNameMap.get(paidUser.getUserId()))
-                    .paidAmount(paidUser.getPaidAmount())
-                    .build();
-            paidUsers.add(paidUserVO);
+            for(PaidUser paidUser : paidUserList)
+            {
+                PaidUsersVO paidUserVO = PaidUsersVO.builder()
+                        .userId(paidUser.getUserId())
+                        .userName(userNameMap.get(paidUser.getUserId()))
+                        .paidAmount(paidUser.getPaidAmount())
+                        .build();
+                paidUsers.add(paidUserVO);
+            }
         }
-
         return paidUsers;
     }
 }
