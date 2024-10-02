@@ -1,18 +1,24 @@
 package com.splitwise.microservices.expense_service.service;
 
+import com.splitwise.microservices.expense_service.clients.UserClient;
 import com.splitwise.microservices.expense_service.entity.Balance;
 import com.splitwise.microservices.expense_service.entity.Settlement;
+import com.splitwise.microservices.expense_service.mapper.BalanceMapper;
+import com.splitwise.microservices.expense_service.model.BalanceResponse;
 import com.splitwise.microservices.expense_service.repository.BalanceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class BalanceService {
     @Autowired
     BalanceRepository balanceRepository;
+    @Autowired
+    UserClient userClient;
+    @Autowired
+    BalanceMapper balanceMapper;
 
     public Balance getPastBalanceOfUser(Long userId, Long owesToUserId, Long groupId)
     {
@@ -126,16 +132,27 @@ public class BalanceService {
         return balanceList;
     }
 
-    public List<Balance> getUsersAllBalances(Long userId) {
-        List<Balance> balanceList = new ArrayList<>();
+    public List<BalanceResponse> getUsersAllBalances(Long userId) {
+        List<BalanceResponse> balanceResponseList = new ArrayList<>();
         try
         {
-            balanceList =  balanceRepository.getUsersAllBalances(userId);
+            List<Balance> balanceList  =  balanceRepository.getUsersAllBalances(userId);
+
+            if(balanceList != null && !balanceList.isEmpty()){
+                Set<Long> userIds = new HashSet<>();
+                for(Balance balance: balanceList){
+                    userIds.add(balance.getUserId());
+                    userIds.add(balance.getOwesTo());
+                }
+                Map<Long,String> userNameMap = userClient.getUserNameMapByUserIds(new ArrayList<>(userIds));
+                Map<Long,String> groupNameMap = userClient.getGroupNameMap(userId);
+                balanceResponseList = balanceMapper.createBalanceResponse(balanceList,userNameMap,groupNameMap,userId);
+            }
         }
         catch(Exception ex)
         {
             //Need to throw Exception
         }
-        return balanceList;
+        return balanceResponseList;
     }
 }

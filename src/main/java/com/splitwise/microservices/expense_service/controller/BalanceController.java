@@ -1,6 +1,7 @@
 package com.splitwise.microservices.expense_service.controller;
 
 import com.splitwise.microservices.expense_service.entity.Balance;
+import com.splitwise.microservices.expense_service.model.BalanceResponse;
 import com.splitwise.microservices.expense_service.service.BalanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -38,21 +39,21 @@ public class BalanceController {
         return new ResponseEntity<>(balanceList,HttpStatus.OK);
     }
     @GetMapping("/getUserAllBalances/{userId}")
-    public ResponseEntity<List<Balance>> getUserAllBalances(@PathVariable("userId") Long userId)
+    public ResponseEntity<List<BalanceResponse>> getUserAllBalances(@PathVariable("userId") Long userId)
     {
         if(userId == null)
         {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        List<Balance> balanceList = new ArrayList<>();
+        List<BalanceResponse> balanceResponseList;
         try
         {
-            balanceList = balanceService.getUsersAllBalances(userId);
+            balanceResponseList = balanceService.getUsersAllBalances(userId);
         }
         catch(Exception ex)
         {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>(balanceList,HttpStatus.OK);
+        return new ResponseEntity<>(balanceResponseList,HttpStatus.OK);
     }
 }
