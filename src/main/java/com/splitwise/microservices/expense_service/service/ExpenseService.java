@@ -24,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class ExpenseService {
@@ -431,6 +433,8 @@ public class ExpenseService {
         List<ExpenseResponse> expenseResponseList = new ArrayList<>();
         try {
             List<Long> expenseIds = expenseRepository.getExpensesByGroupId(groupId);
+            //Get userId and userName Map using feign client
+            Map<Long, String> userNameMap = userClient.getUserNameMapByGroupId(groupId);
             for(Long expenseId : expenseIds)
             {
                 //Get Expense Data
@@ -439,10 +443,10 @@ public class ExpenseService {
                 List<PaidUser> paidUsers = paidUserService.findByExpenseId(expenseId);
                 //Get Participants List
                 List<ExpenseParticipant> expenseParticipants= expenseParticipantService.getParticipantsByExpenseId(expenseId);
-                //Get userId and userName Map using feign client
-                Map<Long, String> userNameMap = userClient.getUserNameMapByGroupId(groupId);
+                //Get groupNameMap
+                Map<Long,String> groupNameMap = userClient.getGroupNameMapByGroupId(groupId);
                 //Prepare Expense Response
-                ExpenseResponse expenseResponse = expenseMapper.createExpenseResonse(expense,expenseParticipants,paidUsers,userNameMap);
+                ExpenseResponse expenseResponse = expenseMapper.createExpenseResponse(expense,expenseParticipants,paidUsers,userNameMap, groupNameMap);
                 expenseResponseList.add(expenseResponse);
             }
         }
@@ -452,6 +456,57 @@ public class ExpenseService {
             throw ex;
         }
 
+        return expenseResponseList;
+    }
+    public List<ExpenseResponse> getExpensesByExpenseIds(List<Long> expenseIds,Map<Long,String> userNameMap,Map<Long,String> groupNameMap)
+    {
+        List<ExpenseResponse> expenseResponseList = new ArrayList<>();
+        try{
+            for(Long expenseId : expenseIds)
+            {
+                //Get Expense Data
+                Expense expense = expenseRepository.findByExpenseId(expenseId).get();
+                //Get Paid Users List
+                List<PaidUser> paidUsers = paidUserService.findByExpenseId(expenseId);
+                //Get Participants List
+                List<ExpenseParticipant> expenseParticipants= expenseParticipantService.getParticipantsByExpenseId(expenseId);
+                //Prepare Expense Response
+                ExpenseResponse expenseResponse = expenseMapper.createExpenseResponse(expense,expenseParticipants,paidUsers,userNameMap,groupNameMap);
+                expenseResponseList.add(expenseResponse);
+            }
+        }
+        catch(Exception ex){
+            LOGGER.error("Error occurred while retrieving Expenses at getExpensesByExpenseIds() "+ex.getMessage());
+            throw  ex;
+        }
+        return expenseResponseList;
+    }
+
+    public List<ExpenseResponse> getExpensesByUserId(Long userId)
+    {
+        List<ExpenseResponse> expenseResponseList = new ArrayList<>();
+        try{
+            //Get expense id from paidUser by userId
+            List<Long> paidUserExpenseIds = paidUserService.getPaidUsersExpenseIdByUserId(userId);
+            //Get expense if from participants by userId
+            List<Long> participantsExpenseIds = expenseParticipantService.getParticipantsExpenseIdByUserId(userId);
+
+            if(paidUserExpenseIds != null && !paidUserExpenseIds.isEmpty() || participantsExpenseIds != null && !participantsExpenseIds.isEmpty())
+            {
+                //Extract unique expenseId
+                List<Long> uniqueExpenseId = Stream.concat(paidUserExpenseIds.stream(),participantsExpenseIds.stream()).distinct().collect(Collectors.toList());
+                //Get userNameMap of Friends by userId
+                Map<Long,String> userNameMap = userClient.getFriendsUserNameMapByUserId(userId);
+                //Get groupNameMap using userId
+                Map<Long, String> groupNameMap = userClient.getGroupNameMap(userId);
+                //Get ExpenseResponse List with ExpenseIds
+                expenseResponseList = getExpensesByExpenseIds(uniqueExpenseId,userNameMap,groupNameMap);
+            }
+        }
+        catch(Exception ex){
+            LOGGER.error("Error occurred while retrieving Expenses at getExpensesByUserId() "+ex.getMessage());
+            throw ex;
+        }
         return expenseResponseList;
     }
 }

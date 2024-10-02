@@ -57,8 +57,8 @@ public class ExpenseMapper {
                 .build();
         return expenseRequest;
     }
-    public ExpenseResponse createExpenseResonse(Expense expense, List<ExpenseParticipant> participantList,
-                                                List<PaidUser> paidUserList, Map<Long,String> userNameMap)
+    public ExpenseResponse createExpenseResponse(Expense expense, List<ExpenseParticipant> participantList,
+                                                List<PaidUser> paidUserList, Map<Long,String> userNameMap, Map<Long,String> groupNameMap)
     {
         List<ExpenseParticipantVO> participants = expenseParticipantMapper.getParticipantsFromParticipantList(participantList, userNameMap);
         List<PaidUsersVO> paidUsers = getPaidUsersVoFromPaidUsersList(paidUserList,userNameMap);
@@ -69,6 +69,7 @@ public class ExpenseMapper {
                 .expenseDescription(expense.getExpenseDescription())
                 .category(expense.getCategory())
                 .groupId(expense.getGroupId())
+                .groupName(groupNameMap != null ? groupNameMap.get(expense.getGroupId()) : null)
                 .paidUsers(paidUsers)
                 .participantShareList(participants)
                 .spentOnDate(expense.getSpentOnDate())

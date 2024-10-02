@@ -32,13 +32,31 @@ public class ExpenseController {
         {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        List<ExpenseResponse> expenseResponse = new ArrayList<>();
+        List<ExpenseResponse> expenseResponse;
         try
         {
             expenseResponse = expenseService.getExpensesByGroupId(groupId);
         }
         catch (Exception ex)
         {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<>(expenseResponse, HttpStatus.OK);
+    }
+    @GetMapping("/get-user-expenses/{userId}")
+    public ResponseEntity<List<ExpenseResponse>> getUserExpenses(@PathVariable("userId") Long userId)
+    {
+        if(userId == null)
+        {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        List<ExpenseResponse> expenseResponse;
+        try{
+            expenseResponse = expenseService.getExpensesByUserId(userId);
+        }
+        catch(Exception ex)
+        {
+            LOGGER.error("Error occurred at getUserExpenses() "+ex.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new ResponseEntity<>(expenseResponse, HttpStatus.OK);
