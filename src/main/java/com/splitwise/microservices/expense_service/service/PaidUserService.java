@@ -45,4 +45,9 @@ public class PaidUserService {
             throw new RuntimeException("Error occurred while updating paid User details",ex);
         }
     }
+
+    public List<Long> getPaidUsersExpenseIdByUserId(Long userId)
+    {
+        return paidUserRepository.getExpenseIdByUserId(userId);
+    }
 }

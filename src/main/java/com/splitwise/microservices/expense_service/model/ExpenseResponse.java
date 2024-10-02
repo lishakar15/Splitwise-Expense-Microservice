@@ -16,6 +16,7 @@ public class ExpenseResponse {
 
     private Long expenseId;
     private Long groupId;
+    private String groupName;
     private List<PaidUsersVO> paidUsers;
     private Double totalAmount;
     private String expenseDescription;
