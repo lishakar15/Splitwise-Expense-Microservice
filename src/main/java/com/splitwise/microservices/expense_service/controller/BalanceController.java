@@ -2,14 +2,13 @@ package com.splitwise.microservices.expense_service.controller;
 
 import com.splitwise.microservices.expense_service.entity.Balance;
 import com.splitwise.microservices.expense_service.model.BalanceResponse;
+import com.splitwise.microservices.expense_service.model.BalanceSummary;
+import com.splitwise.microservices.expense_service.model.GroupBalanceSummary;
 import com.splitwise.microservices.expense_service.service.BalanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,17 +19,17 @@ public class BalanceController {
     @Autowired
     BalanceService balanceService;
 
-    @GetMapping("/getGroupBalances/{groupId}")
-    public ResponseEntity<List<Balance>> getBalancesOfGroup(@PathVariable("groupId") Long groupId)
+    @GetMapping("/getGroupBalances/{groupId}/{userId}")
+    public ResponseEntity<List<BalanceResponse>> getBalancesOfGroup(@PathVariable("groupId") Long groupId, @PathVariable("userId") Long userId)
     {
-        if(groupId == null)
+        if(groupId == null || userId == null)
         {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        List<Balance> balanceList = new ArrayList<>();
+        List<BalanceResponse> balanceList;
         try
         {
-            balanceList = balanceService.getAllBalancesByGroupId(groupId);
+            balanceList = balanceService.getAllBalancesByGroupId(groupId, userId);
         }
         catch(Exception ex)
         {
@@ -55,5 +54,38 @@ public class BalanceController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new ResponseEntity<>(balanceResponseList,HttpStatus.OK);
+    }
+    @GetMapping("getBalanceSummary/{userId}")
+    public ResponseEntity<BalanceSummary> getUserBalanceSummary(@PathVariable Long userId){
+
+        if(userId == null)
+        {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        BalanceSummary balanceSummary = balanceService.getUserBalanceSummaryByUserId(userId);
+
+        return new ResponseEntity<>(balanceSummary,HttpStatus.OK);
+    }
+    @GetMapping("getGroupBalanceSummary/{userId}")
+    public ResponseEntity<List<GroupBalanceSummary>> getGroupBalanceSummary(@PathVariable("userId") Long userId){
+
+        if(userId == null)
+        {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        List<GroupBalanceSummary>  balanceSummaryList = balanceService.getGroupBalanceSummaryByUserId(userId);
+
+        return new ResponseEntity<>(balanceSummaryList,HttpStatus.OK);
+    }
+    @GetMapping("getGroupBalanceSummary/{groupId}/{userId}")
+    public ResponseEntity<List<GroupBalanceSummary>> getGroupBalanceSummary(@PathVariable("userId") Long userId, @PathVariable("groupId") Long groupId){
+
+        if(userId == null)
+        {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        List<GroupBalanceSummary>  balanceSummaryList = balanceService.getGroupBalanceSummaryByUserId(userId, groupId);
+
+        return new ResponseEntity<>(balanceSummaryList,HttpStatus.OK);
     }
 }

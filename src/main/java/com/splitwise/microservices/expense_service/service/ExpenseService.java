@@ -247,7 +247,7 @@ public class ExpenseService {
         //Save Participants
         expenseParticipantService.updateParticipantsExpense(expenseRequest,expenseId);
         //Calculate balance for updated expense
-        calculateParticipantsBalance(expenseRequest);
+        saveParticipantsBalance(expenseRequest);
         //Record update Activity
         //createExpenseActivity(ActivityType.EXPENSE_UPDATED,expenseRequest,oldExpenseRequest);
         }
@@ -312,9 +312,8 @@ public class ExpenseService {
                     {
                         Long participantId = participantEntry.getKey();
                         Double amountOwes = participantEntry.getValue();
-                        //Check if there is any past pending balance
-                        Balance existingBalance = balanceService.getPastBalanceOfUser(paidUserId,participantId
-                                ,groupId);
+                        //Check if participant owes any amount to paid user in the past
+                        Balance existingBalance = balanceService.getPastBalanceOfUser(participantId,paidUserId,groupId);
                         if(existingBalance != null)
                         {
                             //Update existing balance
@@ -326,8 +325,7 @@ public class ExpenseService {
                         else
                         {
                             //Check if paid user owes any amount to participant in the past
-                            existingBalance = balanceService.getPastBalanceOfUser(participantId,
-                                    paidUserId,groupId);
+                            existingBalance = balanceService.getPastBalanceOfUser(paidUserId,participantId,groupId);
 
                             if(existingBalance != null)
                             {

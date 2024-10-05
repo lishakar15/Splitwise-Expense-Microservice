@@ -5,6 +5,8 @@ import com.splitwise.microservices.expense_service.entity.Balance;
 import com.splitwise.microservices.expense_service.entity.Settlement;
 import com.splitwise.microservices.expense_service.mapper.BalanceMapper;
 import com.splitwise.microservices.expense_service.model.BalanceResponse;
+import com.splitwise.microservices.expense_service.model.BalanceSummary;
+import com.splitwise.microservices.expense_service.model.GroupBalanceSummary;
 import com.splitwise.microservices.expense_service.repository.BalanceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -120,23 +122,33 @@ public class BalanceService {
         }
     }
 
-    public List<Balance> getAllBalancesByGroupId(Long groupId) {
-        List<Balance> balanceList = null;
+    public List<BalanceResponse> getAllBalancesByGroupId(Long groupId, Long userId) {
+        List<BalanceResponse> balanceResponseList = new ArrayList<>();
         try
         {
-            balanceList =  balanceRepository.getBalancesByGroupId(groupId);
+            List<Balance> balanceList =  balanceRepository.getUserBalancesByGroupId(groupId, userId);
+            if(balanceList != null && !balanceList.isEmpty()){
+                Set<Long> userIds = new HashSet<>();
+                for(Balance balance: balanceList){
+                    userIds.add(balance.getUserId());
+                    userIds.add(balance.getOwesTo());
+                }
+                Map<Long,String> userNameMap = userClient.getUserNameMapByUserIds(new ArrayList<>(userIds));
+                Map<Long,String> groupNameMap = userClient.getGroupNameMapByGroupId(groupId);
+                balanceResponseList = balanceMapper.createBalanceResponse(balanceList,userNameMap,groupNameMap,userId);
+            }
         }
         catch (Exception ex) {
             //Need to throw Exception
         }
-        return balanceList;
+        return balanceResponseList;
     }
 
     public List<BalanceResponse> getUsersAllBalances(Long userId) {
         List<BalanceResponse> balanceResponseList = new ArrayList<>();
         try
         {
-            List<Balance> balanceList  =  balanceRepository.getUsersAllBalances(userId);
+            List<Balance> balanceList  =  balanceRepository.getUserAllBalances(userId);
 
             if(balanceList != null && !balanceList.isEmpty()){
                 Set<Long> userIds = new HashSet<>();
@@ -155,4 +167,97 @@ public class BalanceService {
         }
         return balanceResponseList;
     }
-}
+
+    public BalanceSummary getUserBalanceSummaryByUserId(Long userId) {
+
+        BalanceSummary balanceSummary = new BalanceSummary();
+        try{
+            List<Balance> balances = balanceRepository.getUserAllBalances(userId);
+            if(balances != null && !balances.isEmpty()){
+                Double oweAmount = balances.stream().filter(b -> b.getUserId().equals(userId)).mapToDouble(b->b.getBalanceAmount()).sum();
+                Double owedAmount = balances.stream().filter(b -> b.getOwesTo().equals(userId)).mapToDouble(b->b.getBalanceAmount()).sum();
+                balanceSummary.setUserId(userId);
+                balanceSummary.setOweAmount(oweAmount);
+                balanceSummary.setOwedAmount(owedAmount);
+            }
+        }
+        catch (Exception ex){
+            // Need to throw Exception
+        }
+
+            return balanceSummary;
+        }
+    public List<GroupBalanceSummary> getGroupBalanceSummaryByUserId(Long userId){
+
+        List<GroupBalanceSummary> balanceSummaryList = new ArrayList<>();
+        Map<Long, GroupBalanceSummary> balanceMap = new HashMap<>();
+        try{
+            List<Balance> balances = balanceRepository.getUserAllBalances(userId);
+            if(balances != null && !balances.isEmpty()){
+                for(Balance balance : balances){
+                    if(balance.getUserId().equals(userId))
+                    {
+                        balance.setBalanceAmount(-balance.getBalanceAmount());
+                    }
+                    if(balanceMap.containsKey(balance.getGroupId())){
+                        GroupBalanceSummary balanceSummary  = balanceMap.get(balance.getGroupId());
+                        Double existingAmount = balanceSummary.getAmount();
+                        balanceSummary.setAmount(balance.getBalanceAmount() + existingAmount);
+                        balanceSummary.setIsOwed(balance.getBalanceAmount() > 0 ? true : false);
+                        balanceMap.put(balance.getGroupId(),balanceSummary);
+                    }
+                    else {
+                        GroupBalanceSummary balanceSummary = GroupBalanceSummary.builder()
+                                .groupId(balance.getGroupId())
+                                .amount(balance.getBalanceAmount())
+                                .isOwed(balance.getBalanceAmount() > 0 ? true : false)
+                                .build();
+                        balanceMap.put(balance.getGroupId(),balanceSummary);
+                    }
+                }
+                balanceSummaryList = new ArrayList<>(balanceMap.values());
+            }
+        }
+        catch (Exception ex){
+            // Need to throw Exception
+        }
+        return balanceSummaryList;
+    }
+    public List<GroupBalanceSummary> getGroupBalanceSummaryByUserId(Long userId, Long groupId){
+
+        List<GroupBalanceSummary> balanceSummaryList = new ArrayList<>();
+        Map<Long, GroupBalanceSummary> balanceMap = new HashMap<>();
+        try{
+            List<Balance> balances = balanceRepository.getUserBalancesByGroupId(groupId, userId);
+            if(balances != null && !balances.isEmpty()){
+                for(Balance balance : balances){
+                    if(balance.getUserId().equals(userId))
+                    {
+                        balance.setBalanceAmount(-balance.getBalanceAmount());
+                    }
+                    if(balanceMap.containsKey(balance.getGroupId())){
+                        GroupBalanceSummary balanceSummary  = balanceMap.get(balance.getGroupId());
+                        Double existingAmount = balanceSummary.getAmount();
+                        balanceSummary.setAmount(balance.getBalanceAmount() + existingAmount);
+                        balanceSummary.setIsOwed(balance.getBalanceAmount() > 0 ? true : false);
+                        balanceMap.put(balance.getGroupId(),balanceSummary);
+                    }
+                    else {
+                        GroupBalanceSummary balanceSummary = GroupBalanceSummary.builder()
+                                .groupId(balance.getGroupId())
+                                .amount(balance.getBalanceAmount())
+                                .isOwed(balance.getBalanceAmount() > 0 ? true : false)
+                                .build();
+                        balanceMap.put(balance.getGroupId(),balanceSummary);
+                    }
+                }
+                balanceSummaryList = new ArrayList<>(balanceMap.values());
+            }
+        }
+        catch (Exception ex){
+            // Need to throw Exception
+        }
+        return balanceSummaryList;
+    }
+
+    }
