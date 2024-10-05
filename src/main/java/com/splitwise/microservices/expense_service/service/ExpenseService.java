@@ -54,7 +54,7 @@ public class ExpenseService {
             savedExpense = expenseRepository.save(expenseObj);
             savePaidUsers(expenseRequest.getPaidUsers(),savedExpense.getExpenseId());
         }
-       return savedExpense;
+        return savedExpense;
     }
     /**
      * This method handles saving Expense and related details
@@ -148,7 +148,7 @@ public class ExpenseService {
     }
 
     private List<ChangeLog> createChangeLogForExpenseModify(ExpenseRequest newExpenseRequest,
-                                                    ExpenseRequest oldExpenseRequest) {
+                                                            ExpenseRequest oldExpenseRequest) {
         List<ChangeLog> changeLogs = new ArrayList<>();
         if (newExpenseRequest != null && oldExpenseRequest != null)
         {
@@ -184,7 +184,7 @@ public class ExpenseService {
                     sb.append(newExpenseRequest.getCategory());
                     changeLogs.add(new ChangeLog(sb.toString()));
                 }
-               if(!oldExpenseRequest.getSpentOnDate().equals(newExpenseRequest.getSpentOnDate()))
+                if(!oldExpenseRequest.getSpentOnDate().equals(newExpenseRequest.getSpentOnDate()))
                 {
                     StringBuilder sb = new StringBuilder();
                     sb.append(StringConstants.SPENT_ON_DATE);
@@ -214,11 +214,11 @@ public class ExpenseService {
     public void savePaidUsers(List<PaidUser> paidUsers,Long expenseId)
     {
         try{
-                for(PaidUser paidUser : paidUsers)
-                {
-                    paidUser.setExpenseId(expenseId);
-                    paidUserService.savePaidUser(paidUser);
-                }
+            for(PaidUser paidUser : paidUsers)
+            {
+                paidUser.setExpenseId(expenseId);
+                paidUserService.savePaidUser(paidUser);
+            }
         }
         catch(Exception ex)
         {
@@ -234,22 +234,22 @@ public class ExpenseService {
         Long expenseId = expenseRequest.getExpenseId();
         try{
 
-        //Undo previous balance calculation
-        ExpenseRequest oldExpenseRequest = createExpenseRequestFromExpenseId(expenseId);
+            //Undo previous balance calculation
+            ExpenseRequest oldExpenseRequest = createExpenseRequestFromExpenseId(expenseId);
             revertPreviousBalanceForExpense(oldExpenseRequest);
 
-        Expense updatedExpense = expenseMapper.getExpenseFromRequest(expenseRequest);
+            Expense updatedExpense = expenseMapper.getExpenseFromRequest(expenseRequest);
             updatedExpense.setExpenseId(expenseId);
-        List<PaidUser> paidUsers = expenseRequest.getPaidUsers();
-        //Save Expense and Paid Users
-        expenseRepository.save(updatedExpense);
-        paidUserService.updatePaidUsers(paidUsers,expenseId);
-        //Save Participants
-        expenseParticipantService.updateParticipantsExpense(expenseRequest,expenseId);
-        //Calculate balance for updated expense
-        calculateParticipantsBalance(expenseRequest);
-        //Record update Activity
-        //createExpenseActivity(ActivityType.EXPENSE_UPDATED,expenseRequest,oldExpenseRequest);
+            List<PaidUser> paidUsers = expenseRequest.getPaidUsers();
+            //Save Expense and Paid Users
+            expenseRepository.save(updatedExpense);
+            paidUserService.updatePaidUsers(paidUsers,expenseId);
+            //Save Participants
+            expenseParticipantService.updateParticipantsExpense(expenseRequest,expenseId);
+            //Calculate balance for updated expense
+            saveParticipantsBalance(expenseRequest);
+            //Record update Activity
+            //createExpenseActivity(ActivityType.EXPENSE_UPDATED,expenseRequest,oldExpenseRequest);
         }
         catch (Exception ex)
         {
@@ -298,72 +298,63 @@ public class ExpenseService {
         saveParticipantsBalance(reverseBalanceMap,groupId);
     }
 
-    public void saveParticipantsBalance(Map<Long, Map<Long, Double>> balanceMap,Long groupId)
-    {
-        if(balanceMap != null)
-        {
-            for(Map.Entry<Long,Map<Long,Double>> mapEntry : balanceMap.entrySet())
-            {
+    public void saveParticipantsBalance(Map<Long, Map<Long, Double>> balanceMap, Long groupId) {
+        if (balanceMap != null) {
+            for (Map.Entry<Long, Map<Long, Double>> mapEntry : balanceMap.entrySet()) {
                 Long paidUserId = mapEntry.getKey();
-                Map<Long,Double> participantsMap = mapEntry.getValue();
-                if(participantsMap != null)
-                {
-                    for(Map.Entry<Long,Double> participantEntry : participantsMap.entrySet())
-                    {
+                Map<Long, Double> participantsMap = mapEntry.getValue();
+
+                if (participantsMap != null) {
+                    for (Map.Entry<Long, Double> participantEntry : participantsMap.entrySet()) {
                         Long participantId = participantEntry.getKey();
                         Double amountOwes = participantEntry.getValue();
-                        //Check if there is any past pending balance
-                        Balance existingBalance = balanceService.getPastBalanceOfUser(paidUserId,participantId
-                                ,groupId);
-                        if(existingBalance != null)
-                        {
-                            //Update existing balance
+
+                        // Check if participant owes any amount to paid user in the past
+                        Balance existingBalance = balanceService.getPastBalanceOfUser(participantId, paidUserId, groupId);
+
+                        if (existingBalance != null) {
+                            // Update existing balance
                             amountOwes = amountOwes + existingBalance.getBalanceAmount();
-                            amountOwes = Math.round(amountOwes * 100.0) / 100.0;
+                            amountOwes = Math.round(amountOwes * 100.0) / 100.0; // rounding
                             existingBalance.setBalanceAmount(amountOwes);
                             balanceService.saveBalance(existingBalance);
-                        }
-                        else
-                        {
-                            //Check if paid user owes any amount to participant in the past
-                            existingBalance = balanceService.getPastBalanceOfUser(participantId,
-                                    paidUserId,groupId);
+                        } else {
+                            // Check if paid user owes any amount to participant in the past
+                            existingBalance = balanceService.getPastBalanceOfUser(paidUserId, participantId, groupId);
 
-                            if(existingBalance != null)
-                            {
-                                //reduce balances
-                                 Double updatedAmount = existingBalance.getBalanceAmount() - amountOwes;
-                                 updatedAmount = Math.round(updatedAmount * 100.0) / 100.0;
-                                 if(updatedAmount > 0)
-                                 {
-                                     existingBalance.setBalanceAmount(updatedAmount);
-                                     balanceService.saveBalance(existingBalance);
-                                 }
-                                 else if(updatedAmount<0){
-                                     balanceService.deleteBalanceById(existingBalance.getBalanceId());
-                                     Balance balance = Balance.builder()
-                                             .groupId(groupId)
-                                             .userId(participantId)
-                                             .owesTo(paidUserId)
-                                             .balanceAmount(Math.abs(updatedAmount))
-                                             .build();
-                                     balanceService.saveBalance(balance);
-                                 }
-                                 else if(updatedAmount == 0 )
-                                 {
-                                     //balance settled
-                                     balanceService.deleteBalanceById(existingBalance.getBalanceId());
-                                 }
-                            }
-                            else
-                            {
-                                Balance balance = Balance.builder()
+                            if (existingBalance != null) {
+                                // Reduce balances
+                                Double updatedAmount = existingBalance.getBalanceAmount() - amountOwes;
+                                updatedAmount = Math.round(updatedAmount * 100.0) / 100.0; // rounding
+
+                                if (updatedAmount > 0) {
+                                    existingBalance.setBalanceAmount(updatedAmount);
+                                    balanceService.saveBalance(existingBalance);
+                                } else if (updatedAmount < 0) {
+                                    // If balance goes negative, we switch the direction
+                                    balanceService.deleteBalanceById(existingBalance.getBalanceId());
+
+                                    Balance newBalance = Balance.builder()
+                                            .groupId(groupId)
+                                            .userId(participantId)
+                                            .owesTo(paidUserId)
+                                            .balanceAmount(Math.abs(updatedAmount))
+                                            .build();
+                                    balanceService.saveBalance(newBalance);
+                                } else {
+                                    // Balance settled
+                                    balanceService.deleteBalanceById(existingBalance.getBalanceId());
+                                }
+                            } else {
+                                // Create a new balance if no existing balance found
+                                Balance newBalance = Balance.builder()
                                         .groupId(groupId)
                                         .userId(participantId)
                                         .owesTo(paidUserId)
                                         .balanceAmount(amountOwes)
                                         .build();
-                                balanceService.saveBalance(balance);                            }
+                                balanceService.saveBalance(newBalance);
+                            }
                         }
                     }
                 }
@@ -426,7 +417,7 @@ public class ExpenseService {
 
     public String getExpenseDescById(Long expenseId)
     {
-       return expenseRepository.getExpenseDescById(expenseId);
+        return expenseRepository.getExpenseDescById(expenseId);
     }
 
     public List<ExpenseResponse> getExpensesByGroupId(Long groupId) {
