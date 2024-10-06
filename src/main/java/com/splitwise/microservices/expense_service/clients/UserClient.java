@@ -24,7 +24,7 @@ public interface UserClient {
     public Map<Long, String> getGroupNameMap(@PathVariable("userId") Long userId);
     @GetMapping("/user/get-friends-name-map/{userId}")
     public Map<Long, String> getFriendsUserNameMapByUserId(@PathVariable("userId") Long userId);
-    @GetMapping("/group//get-group-name-map/{groupId}")
+    @GetMapping("/group/get-group-name-map/{groupId}")
     public Map<Long, String> getGroupNameMapByGroupId(@PathVariable("groupId") Long groupId);
 
 }

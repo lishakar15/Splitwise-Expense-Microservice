@@ -25,6 +25,8 @@ public interface BalanceRepository extends JpaRepository<Balance,Long> {
     public void deleteByBalanceId(@Param("balanceId") Long balanceId);
     @Query(value = "select b from Balance b where b.groupId =:groupId")
     List<Balance> getBalancesByGroupId(@Param("groupId") Long groupId);
-    @Query(value = "select b from Balance b where b.userId =:loggedInUserId or b.owesTo =:loggedInUserId")
-    List<Balance> getUsersAllBalances(@Param("loggedInUserId") Long loggedInUserId);
+    @Query(value = "select b from Balance b where b.userId =:userId or b.owesTo =:userId")
+    List<Balance> getUserAllBalances(@Param("userId") Long userId);
+    @Query(value = "select b from Balance b where b.groupId =:groupId and (b.userId =:userId or b.owesTo =:userId) ")
+    List<Balance> getUserBalancesByGroupId( @Param("groupId") Long groupId, @Param("userId") Long userId);
 }

@@ -308,19 +308,21 @@ public class ExpenseService {
                     for (Map.Entry<Long, Double> participantEntry : participantsMap.entrySet()) {
                         Long participantId = participantEntry.getKey();
                         Double amountOwes = participantEntry.getValue();
-
-                        // Check if participant owes any amount to paid user in the past
-                        Balance existingBalance = balanceService.getPastBalanceOfUser(participantId, paidUserId, groupId);
-
-                        if (existingBalance != null) {
-                            // Update existing balance
+                      
+                        //Check if participant owes any amount to paid user in the past
+                        Balance existingBalance = balanceService.getPastBalanceOfUser(participantId,paidUserId,groupId);
+                        if(existingBalance != null)
+                        {
+                            //Update existing balance
                             amountOwes = amountOwes + existingBalance.getBalanceAmount();
                             amountOwes = Math.round(amountOwes * 100.0) / 100.0; // rounding
                             existingBalance.setBalanceAmount(amountOwes);
                             balanceService.saveBalance(existingBalance);
-                        } else {
-                            // Check if paid user owes any amount to participant in the past
-                            existingBalance = balanceService.getPastBalanceOfUser(paidUserId, participantId, groupId);
+                        }
+                        else
+                        {
+                            //Check if paid user owes any amount to participant in the past
+                            existingBalance = balanceService.getPastBalanceOfUser(paidUserId,participantId,groupId);
 
                             if (existingBalance != null) {
                                 // Reduce balances
