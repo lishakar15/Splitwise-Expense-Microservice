@@ -5,8 +5,7 @@ import com.splitwise.microservices.expense_service.clients.UserClient;
 import com.splitwise.microservices.expense_service.constants.StringConstants;
 import com.splitwise.microservices.expense_service.entity.Comments;
 import com.splitwise.microservices.expense_service.enums.ActivityType;
-import com.splitwise.microservices.expense_service.external.ActivityRequest;
-import com.splitwise.microservices.expense_service.kafka.KafkaProducer;
+import com.splitwise.microservices.expense_service.external.Activity;
 import com.splitwise.microservices.expense_service.mapper.CommentsMapper;
 import com.splitwise.microservices.expense_service.model.CommentsResponse;
 import com.splitwise.microservices.expense_service.repository.CommentRepository;
@@ -26,8 +25,6 @@ public class CommentService {
     CommentRepository commentRepository;
     @Autowired
     UserClient userClient;
-    @Autowired
-    KafkaProducer kafkaProducer;
     @Autowired
     ExpenseService expenseService;
     @Autowired
@@ -77,7 +74,7 @@ public class CommentService {
 
     public void createCommentActivity(ActivityType activityType, Comments comment)
     {
-        ActivityRequest activityRequest = ActivityRequest.builder()
+        Activity activity = Activity.builder()
                 .groupId(comment.getGroupId())
                 .expenseId(comment.getExpenseId())
                 .settlementId(comment.getSettlementId())
@@ -112,12 +109,11 @@ public class CommentService {
         String groupName = userClient.getGroupName(comment.getGroupId());
         sb.append(" in ");
         sb.append(groupName);
-        activityRequest.setMessage(sb.toString());
+        activity.setMessage(sb.toString());
         try
         {
             Gson gson = new Gson();
-            String activityJson = gson.toJson(activityRequest);
-            kafkaProducer.sendActivityMessage(activityJson);
+            String activityJson = gson.toJson(activity);
         }
         catch(Exception ex)
         {

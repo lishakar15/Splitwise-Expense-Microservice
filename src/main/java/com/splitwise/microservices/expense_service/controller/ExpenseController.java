@@ -56,7 +56,7 @@ public class ExpenseController {
         }
         catch(Exception ex)
         {
-            LOGGER.error("Error occurred at getUserExpenses() "+ex.getMessage());
+            LOGGER.error("Error occurred at getUserExpenses() "+ex);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new ResponseEntity<>(expenseResponse, HttpStatus.OK);
@@ -77,7 +77,7 @@ public class ExpenseController {
         }
         catch(Exception ex)
         {
-            System.out.println("Error occurred while saving Expense details "+ ex.getMessage());
+            System.out.println("Error occurred while saving Expense details "+ ex);
             return new ResponseEntity<>("Error occurred while saving Expense details", HttpStatus.INTERNAL_SERVER_ERROR);
 
         }
@@ -96,12 +96,12 @@ public class ExpenseController {
         }
         catch(ExpenseException ex)
         {
-            System.out.println(ex.getMessage());
-            return new ResponseEntity<>(ex.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+            System.out.println(ex);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         catch(Exception ex)
         {
-            System.out.println(ex.getMessage());
+            System.out.println(ex);
             return new ResponseEntity<>("Error occurred while updating participant expenses",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -118,7 +118,7 @@ public class ExpenseController {
         catch (Exception ex)
         {
             LOGGER.error("Error occurred while deleting expense "+ex);
-            return new ResponseEntity<>(ex.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new ResponseEntity<>("Expense deleted successfully!!",HttpStatus.OK);
     }
