@@ -1,5 +1,6 @@
 package com.splitwise.microservices.expense_service.service;
 
+import com.splitwise.microservices.expense_service.clients.ActivityClient;
 import com.splitwise.microservices.expense_service.clients.UserClient;
 import com.splitwise.microservices.expense_service.constants.StringConstants;
 import com.splitwise.microservices.expense_service.entity.Settlement;
@@ -17,6 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 
 @Service
@@ -27,6 +30,8 @@ public class SettlementService {
     BalanceService balanceService;
     @Autowired
     UserClient userClient;
+    @Autowired
+    ActivityClient activityClient;
     @Autowired
     SettlementMapper settlementMapper;
 
@@ -50,7 +55,7 @@ public class SettlementService {
         try {
             Activity activity = Activity.builder()
                     .activityType(activityType)
-                    .createDate(null)
+                    .createDate(newSettlement.getLastUpdateDate())
                     .groupId(newSettlement.getGroupId())
                     .settlementId(newSettlement.getSettlementId())
                     .build();
@@ -67,7 +72,6 @@ public class SettlementService {
                 sb.append(userNameMap.get(payerId));
                 sb.append(" to ");
                 sb.append(userNameMap.get(receiverId));
-                activity.setMessage(sb.toString());
             }
             if (ActivityType.PAYMENT_UPDATED.equals(activityType)) {
                 //Payment Update Activity
@@ -78,7 +82,6 @@ public class SettlementService {
                 sb.append(userNameMap.get(payerId));
                 sb.append(" to ");
                 sb.append(userNameMap.get(receiverId));
-                activity.setMessage(sb.toString());
                 if (oldSettlement != null) {
                     List<ChangeLog> changeLogs = createChangeLogForSettlementModify(newSettlement, oldSettlement);
                     if (changeLogs != null && !changeLogs.isEmpty()) {
@@ -95,14 +98,17 @@ public class SettlementService {
                 sb.append(userNameMap.get(payerId));
                 sb.append(" to ");
                 sb.append(userNameMap.get(receiverId));
-                activity.setMessage(sb.toString());
             }
+            String groupName = userClient.getGroupName(newSettlement.getGroupId());
+            sb.append(" in "+groupName);
+            activity.setMessage(sb.toString());
             List<Long> relatedUserIds = Arrays.asList(payerId,receiverId);
             ActivityRequest activityRequest = ActivityRequest.builder()
                     .activity(activity)
                     .userIdList(relatedUserIds)
                     .build();
             //Sent Activity request to Orchestrate
+            activityClient.sendActivityRequest(activityRequest);
 
         } catch (Exception ex) {
             LOGGER.error("Error occurred while creating Settlement Activity " + ex);
@@ -132,6 +138,25 @@ public class SettlementService {
                     sb.append(newSettlement.getPaymentMethod());
                     changeLogs.add(new ChangeLog(sb.toString()));
                 }
+                LocalDate oldSettlementDate = oldSettlement.getSettlementDate()
+                        .toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+
+                LocalDate newSettlementDate = newSettlement.getSettlementDate()
+                        .toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+                if(!oldSettlementDate.equals(newSettlementDate))
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(StringConstants.PAYMENT_DATE);
+                    sb.append(" from ");
+                    sb.append((oldSettlementDate));
+                    sb.append(" to ");
+                    sb.append(newSettlementDate);
+                    changeLogs.add(new ChangeLog(sb.toString()));
+                }
             }
 
         }
@@ -154,7 +179,7 @@ public class SettlementService {
             Map<Long, String> groupNameMap = new HashMap<>();
             groupNameMap.put(groupId, groupName);
             //Create Settlement Response
-            return settlementMapper.createSettlementResponse(settlements, userNameMap, groupNameMap);
+            return settlementMapper.createSettlementResponseList(settlements, userNameMap, groupNameMap);
         } catch (Exception ex) {
             LOGGER.error("Error occurred while fetching data in getAllSettlementByGroupId() {}", ex);
         }
@@ -176,7 +201,7 @@ public class SettlementService {
                 Map<Long, String> userNameMap = userClient.getUserNameMapByUserIds(allUserIds);
                 //Get the groupId and groupName Map using user id
                 Map<Long, String> groupNameMap = userClient.getGroupNameMap(userId);
-                settlementResponseList = settlementMapper.createSettlementResponse(settlements, userNameMap, groupNameMap);
+                settlementResponseList = settlementMapper.createSettlementResponseList(settlements, userNameMap, groupNameMap);
             }
         } catch (Exception ex) {
             LOGGER.error("Error occurred while fetching data in getAllSettlementsByUserId() {}", ex);
@@ -225,16 +250,22 @@ public class SettlementService {
         }
     }
 
-    public Settlement getSettlementDetailsByID(Long settlementId) {
-        Settlement settlement = null;
+    public SettlementResponse getSettlementDetailsByID(Long settlementId, Long userId) {
+        SettlementResponse settlementResponse = null;
         try {
             Optional<Settlement> optional = settlementRepository.findById(settlementId);
             if (optional.isPresent()) {
-                settlement = optional.get();
+                Settlement settlement = optional.get();
+                List<Long> allUserIds = Arrays.asList(settlement.getPaidBy(),settlement.getPaidTo());
+                //Get userId and userName map
+                Map<Long, String> userNameMap = userClient.getUserNameMapByUserIds(allUserIds);
+                //Get the groupId and groupName Map using user id
+                Map<Long, String> groupNameMap = userClient.getGroupNameMap(userId);
+                settlementResponse = settlementMapper.createSettlementResponse(settlement, userNameMap, groupNameMap);
             }
         } catch (Exception ex) {
-            //Need to throw Exception
+            LOGGER.error("Error occurred while getting settlement getSettlementDetailsByID " + ex);
         }
-        return settlement;
+        return settlementResponse;
     }
 }

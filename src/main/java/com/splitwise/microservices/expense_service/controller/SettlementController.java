@@ -52,15 +52,15 @@ public class SettlementController {
         return new ResponseEntity<>(settlementResponse,HttpStatus.OK);
     }
 
-    @GetMapping("/getSettlementDetails/{settlementId}")
-    public ResponseEntity<Settlement> getSettlementDetails(@PathVariable("settlementId") Long settlementId)
+    @GetMapping("/getSettlementDetails/{settlementId}/{userId}")
+    public ResponseEntity<SettlementResponse> getSettlementDetails(@PathVariable("settlementId") Long settlementId, @PathVariable("userId") Long userId)
     {
         if(settlementId == null)
         {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        Settlement settlement = settlementService.getSettlementDetailsByID(settlementId);
+        SettlementResponse settlement = settlementService.getSettlementDetailsByID(settlementId, userId);
         if(settlement == null)
         {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

@@ -117,7 +117,7 @@ public class CommentService {
         }
         catch(Exception ex)
         {
-            LOGGER.error("Error occurred while sending message to Kafka Topic "+ex);
+            LOGGER.error("Error occurred in createCommentActivity()"+ex);
         }
     }
 }

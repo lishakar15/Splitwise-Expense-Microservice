@@ -41,7 +41,7 @@ public class SettlementMapper {
         }
         return commentsList;
     }
-    public List<SettlementResponse> createSettlementResponse(List<Settlement> settlements, Map<Long,String> userNameMap,Map<Long,String> groupNameMap){
+    public List<SettlementResponse> createSettlementResponseList(List<Settlement> settlements, Map<Long,String> userNameMap,Map<Long,String> groupNameMap){
         List<SettlementResponse> settlementResponseList = new ArrayList<>();
         if(settlements != null && userNameMap != null)
         {
@@ -65,5 +65,28 @@ public class SettlementMapper {
             }
         }
         return settlementResponseList;
+    }
+
+    public SettlementResponse createSettlementResponse(Settlement settlement, Map<Long,String> userNameMap,Map<Long,String> groupNameMap){
+        SettlementResponse settlementResponse = null;
+        if(settlement != null && userNameMap != null)
+        {
+            settlementResponse = SettlementResponse.builder()
+                        .settlementId(settlement.getSettlementId())
+                        .groupId(settlement.getGroupId())
+                        .groupName(groupNameMap.get(settlement.getGroupId()))
+                        .paidBy(settlement.getPaidBy())
+                        .paidByUserName(userNameMap.get(settlement.getPaidBy()))
+                        .paidTo(settlement.getPaidTo())
+                        .paidToUserName(userNameMap.get(settlement.getPaidTo()))
+                        .amountPaid(settlement.getAmountPaid())
+                        .createdBy(settlement.getCreatedBy())
+                        .modifiedBy(settlement.getModifiedBy())
+                        .paymentMethod(settlement.getPaymentMethod())
+                        .settlementDate(settlement.getSettlementDate())
+                        .lastUpdateDate(settlement.getLastUpdateDate())
+                        .build();
+            }
+        return settlementResponse;
     }
 }

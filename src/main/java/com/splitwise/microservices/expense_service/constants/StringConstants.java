@@ -22,6 +22,7 @@ public class StringConstants {
     public static final String SPENT_ON_DATE = "Spend on date";
     public static final String SPLIT_TYPE = "Split Type";
     public static final String PAYMENT_METHOD = "Payment Type";
+    public static final String PAYMENT_DATE = "Payment Date";
 
 
 

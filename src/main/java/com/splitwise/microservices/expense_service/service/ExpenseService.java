@@ -23,6 +23,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -73,7 +75,7 @@ public class ExpenseService {
                 //Calculate and save individual balances users owe
                 saveParticipantsBalance(expenseRequest);
                 expenseRequest.setExpenseId(savedExpense.getExpenseId());//Setting saved expenseId to request
-                createExpenseActivity(ActivityType.EXPENSE_CREATED,expenseRequest,null);
+                createExpenseActivity(ActivityType.EXPENSE_CREATED, expenseRequest, null);
             } else {
                 throw new RuntimeException("Error occurred while saving Expense");
             }
@@ -99,14 +101,12 @@ public class ExpenseService {
                 sb.append(createdUserName);
                 sb.append(StringConstants.EXPENSE_CREATED);
                 sb.append(newExpenseRequest.getExpenseDescription());
-                activity.setMessage(sb.toString());
             } else if (ActivityType.EXPENSE_UPDATED.equals(activityType)) {
                 //Expense Update Activity
                 String updatedUserName = userClient.getUserName(newExpenseRequest.getUpdatedBy());
                 sb.append(updatedUserName);
                 sb.append(StringConstants.EXPENSE_UPDATED);
                 sb.append(newExpenseRequest.getExpenseDescription());
-                activity.setMessage(sb.toString());
                 if (oldExpenseRequest != null) {
                     List<ChangeLog> changeLogs = createChangeLogForExpenseModify(newExpenseRequest, oldExpenseRequest);
                     if (changeLogs != null && !changeLogs.isEmpty()) {
@@ -120,8 +120,11 @@ public class ExpenseService {
                 sb.append(deletedUserName);
                 sb.append(StringConstants.EXPENSE_DELETED);
                 sb.append(newExpenseRequest.getExpenseDescription());
-                activity.setMessage(sb.toString());
+
             }
+            String groupName = userClient.getGroupName(newExpenseRequest.getGroupId());
+            sb.append(" in " + groupName);
+            activity.setMessage(sb.toString());
             List<Long> relatedUsersIds = getRelatedUsersIdFromExpense(newExpenseRequest, oldExpenseRequest);
             ActivityRequest activityRequest = ActivityRequest.builder()
                     .activity(activity)
@@ -178,9 +181,9 @@ public class ExpenseService {
                     StringBuilder sb = new StringBuilder();
                     sb.append(StringConstants.AMOUNT);
                     sb.append(" from ");
-                    sb.append(oldExpenseRequest.getTotalAmount());
+                    sb.append("₹" + oldExpenseRequest.getTotalAmount());
                     sb.append(" to ");
-                    sb.append(newExpenseRequest.getTotalAmount());
+                    sb.append("₹" + newExpenseRequest.getTotalAmount());
                     changeLogs.add(new ChangeLog(sb.toString()));
                 }
                 if (!oldExpenseRequest.getCategory().equals(newExpenseRequest.getCategory())) {
@@ -192,13 +195,22 @@ public class ExpenseService {
                     sb.append(newExpenseRequest.getCategory());
                     changeLogs.add(new ChangeLog(sb.toString()));
                 }
-                if (!oldExpenseRequest.getSpentOnDate().equals(newExpenseRequest.getSpentOnDate())) {
+                LocalDate oldSpentOnDate = oldExpenseRequest.getSpentOnDate()
+                        .toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+
+                LocalDate newSpentOnDate = newExpenseRequest.getSpentOnDate()
+                        .toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+                if (!oldSpentOnDate.equals(newSpentOnDate)) {
                     StringBuilder sb = new StringBuilder();
                     sb.append(StringConstants.SPENT_ON_DATE);
                     sb.append(" from ");
-                    sb.append(oldExpenseRequest.getSpentOnDate());
+                    sb.append(oldSpentOnDate);
                     sb.append(" to ");
-                    sb.append(newExpenseRequest.getSpentOnDate());
+                    sb.append(newSpentOnDate);
                     changeLogs.add(new ChangeLog(sb.toString()));
                 }
                 if (!oldExpenseRequest.getSplitType().equals(newExpenseRequest.getSplitType())) {
@@ -250,11 +262,11 @@ public class ExpenseService {
             //Calculate balance for updated expense
             saveParticipantsBalance(expenseRequest);
             //Record update Activity
-            createExpenseActivity(ActivityType.EXPENSE_UPDATED,expenseRequest,oldExpenseRequest);
+            createExpenseActivity(ActivityType.EXPENSE_UPDATED, expenseRequest, oldExpenseRequest);
         } catch (Exception ex) {
             System.out.println(ex);
             throw new RuntimeException("Error occurred while updating Expense details");
-            }
+        }
     }
 
     public void saveParticipantsBalance(ExpenseRequest expenseRequest) {
@@ -379,7 +391,7 @@ public class ExpenseService {
             paidUserService.deleteByExpenseId(expenseId);
             if (expenseRequest != null) {
                 expenseRequest.setUpdatedBy(loggedInUser);
-                createExpenseActivity(ActivityType.EXPENSE_DELETED,expenseRequest,null);
+                createExpenseActivity(ActivityType.EXPENSE_DELETED, expenseRequest, null);
             }
         } catch (Exception ex) {
             throw new RuntimeException("Error occurred while processing delete request " + ex);
@@ -474,5 +486,27 @@ public class ExpenseService {
             throw ex;
         }
         return expenseResponseList;
+    }
+
+    public ExpenseResponse getExpensesByExpenseId(Long expenseId, Long userId) {
+        ExpenseResponse expenseResponse = null;
+        try {
+            Optional<Expense> optional = expenseRepository.findByExpenseId(expenseId);
+            if (optional.isPresent()) {
+                Expense expense = optional.get();
+                List<PaidUser> paidUserList = paidUserService.findByExpenseId(expenseId);
+                List<ExpenseParticipant> participantList = expenseParticipantService.getParticipantsByExpenseId(expenseId);
+                //Get userNameMap of Friends by userId
+                Map<Long, String> userNameMap = userClient.getFriendsUserNameMapByUserId(userId);
+                //Get groupNameMap using userId
+                Map<Long, String> groupNameMap = userClient.getGroupNameMap(userId);
+                //Prepare Expense Response
+                expenseResponse =  expenseMapper.createExpenseResponse(expense, participantList, paidUserList, userNameMap, groupNameMap);
+            }
+        } catch (Exception ex) {
+            LOGGER.error("Error occurred while retrieving Expenses at getExpensesByExpenseId() " + ex);
+            throw ex;
+        }
+        return expenseResponse;
     }
 }
