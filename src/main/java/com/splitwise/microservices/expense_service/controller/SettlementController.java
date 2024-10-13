@@ -61,10 +61,6 @@ public class SettlementController {
         }
 
         SettlementResponse settlement = settlementService.getSettlementDetailsByID(settlementId, userId);
-        if(settlement == null)
-        {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
         return new ResponseEntity<>(settlement,HttpStatus.OK);
     }
 
