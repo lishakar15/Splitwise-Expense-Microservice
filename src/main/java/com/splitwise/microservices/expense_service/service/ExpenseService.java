@@ -16,6 +16,7 @@ import com.splitwise.microservices.expense_service.mapper.ExpenseMapper;
 import com.splitwise.microservices.expense_service.model.ExpenseResponse;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
 import com.splitwise.microservices.expense_service.model.ParticipantShare;
+import com.splitwise.microservices.expense_service.model.SpendingDataResponse;
 import com.splitwise.microservices.expense_service.repository.ExpenseRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
@@ -508,5 +510,32 @@ public class ExpenseService {
             throw ex;
         }
         return expenseResponse;
+    }
+
+    public List<SpendingDataResponse> getSpendCategoryDistribution(Long userId){
+        List<SpendingDataResponse> spendingDataResponseList = new ArrayList<>();
+        DecimalFormat df = new DecimalFormat("#.##");
+        List<Object []> records = expenseRepository.getCategoryDistributionByParticipantId(userId);
+        double totalAmount = 0;
+        for(Object[] arr : records)
+        {
+            SpendingDataResponse spendingData = SpendingDataResponse.builder()
+                    .category((String) arr[0])
+                    .percentage((Double) arr[1])
+                    .build();
+            spendingDataResponseList.add(spendingData);
+            totalAmount = totalAmount + (double) arr[1];
+        }
+        Double spendPercentValue = 100/totalAmount;
+        List<SpendingDataResponse> result = spendingDataResponseList.stream()
+                .map(s -> {
+                    Double formattedValue = Double.valueOf(df.format(s.getPercentage() * spendPercentValue));
+                    return SpendingDataResponse.builder()
+                            .category(s.getCategory())
+                            .percentage(formattedValue)
+                            .build();
+                })
+                .collect(Collectors.toList());
+        return result;
     }
 }
