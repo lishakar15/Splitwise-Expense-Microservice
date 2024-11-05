@@ -3,8 +3,10 @@ package com.splitwise.microservices.expense_service.controller;
 import com.splitwise.microservices.expense_service.exception.ExpenseException;
 import com.splitwise.microservices.expense_service.model.ExpenseResponse;
 import com.splitwise.microservices.expense_service.model.ExpenseRequest;
+import com.splitwise.microservices.expense_service.model.SpendingDataResponse;
 import com.splitwise.microservices.expense_service.service.ExpenseParticipantService;
 import com.splitwise.microservices.expense_service.service.ExpenseService;
+import org.apache.tomcat.util.http.parser.HttpParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +70,21 @@ public class ExpenseController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new ResponseEntity<>(expenseResponse, HttpStatus.OK);
+    }
+    @GetMapping("/spending-distribution/{userId}")
+    public ResponseEntity<List<SpendingDataResponse>> getSpendingDistributionByUserId(@PathVariable("userId") Long userId){
+        if(userId ==null)
+        {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try{
+            List<SpendingDataResponse> spendingData = expenseService.getSpendCategoryDistribution(userId);
+            return new ResponseEntity<>(spendingData,HttpStatus.OK);
+        }
+        catch (Exception ex){
+            LOGGER.error("Error occurred at getCategoryDistributionByUserId() ",ex);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PostMapping("/add-expense")

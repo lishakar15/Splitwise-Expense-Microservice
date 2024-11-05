@@ -18,4 +18,7 @@ public interface ExpenseRepository extends JpaRepository<Expense,Long> {
     String getExpenseDescById(@Param("expenseId") Long expenseId);
     @Query("select e.expenseId from Expense e where e.groupId =:groupId")
     List<Long> getExpensesByGroupId(@Param("groupId") Long groupId);
+    @Query(value = "select category, sum(settle_amount) from expense_details e JOIN  expense_participants p on e.expense_id = p.expense_id where  p.participant_id =:participantId group by category",
+    nativeQuery = true)
+    List<Object[]> getCategoryDistributionByParticipantId(@Param("participantId") Long participantId);
 }
