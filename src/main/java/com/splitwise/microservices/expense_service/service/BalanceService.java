@@ -187,6 +187,9 @@ public class BalanceService {
 
             return balanceSummary;
         }
+     public Double getUserPendingBalance(Long userId){
+        return balanceRepository.getPendingBalancesByUserId(userId);
+     }
     public List<GroupBalanceSummary> getGroupBalanceSummaryByUserId(Long userId){
 
         List<GroupBalanceSummary> balanceSummaryList = new ArrayList<>();

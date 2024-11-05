@@ -9,6 +9,7 @@ import com.splitwise.microservices.expense_service.external.Activity;
 import com.splitwise.microservices.expense_service.external.ActivityRequest;
 import com.splitwise.microservices.expense_service.external.ChangeLog;
 import com.splitwise.microservices.expense_service.mapper.SettlementMapper;
+import com.splitwise.microservices.expense_service.model.SettlementInsight;
 import com.splitwise.microservices.expense_service.model.SettlementResponse;
 import com.splitwise.microservices.expense_service.repository.SettlementRepository;
 import org.slf4j.Logger;
@@ -267,5 +268,17 @@ public class SettlementService {
             LOGGER.error("Error occurred while getting settlement getSettlementDetailsByID " + ex);
         }
         return settlementResponse;
+    }
+
+    public SettlementInsight getSettlementInsightsDataByUserId(Long userId) {
+        //Get the total Settlements made by the user
+        Double totalSettlements = settlementRepository.getTotalSettlementsByUserId(userId);
+        Double pendingSettlements = balanceService.getUserPendingBalance(userId);
+        //Get the pending total Balances
+        SettlementInsight settlementInsight = SettlementInsight.builder()
+                .totalSettlements(totalSettlements)
+                .pendingSettlements(pendingSettlements)
+                .build();
+        return settlementInsight;
     }
 }
