@@ -29,4 +29,6 @@ public interface BalanceRepository extends JpaRepository<Balance,Long> {
     List<Balance> getUserAllBalances(@Param("userId") Long userId);
     @Query(value = "select b from Balance b where b.groupId =:groupId and (b.userId =:userId or b.owesTo =:userId) ")
     List<Balance> getUserBalancesByGroupId( @Param("groupId") Long groupId, @Param("userId") Long userId);
+    @Query(value = "select sum(b.balanceAmount) from Balance b where b.userId=:userId")
+    Double getPendingBalancesByUserId(@Param("userId") Long userId);
 }

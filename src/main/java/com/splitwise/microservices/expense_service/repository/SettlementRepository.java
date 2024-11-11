@@ -22,4 +22,6 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     @Transactional
     @Query(value = "delete from Settlement s where s.settlementId =:settlementId")
     void deleteSettlementById(@Param("settlementId")Long settlementId);
+    @Query(value ="select sum(s.amountPaid) from Settlement s where s.paidBy=:userId")
+    Double getTotalSettlementsByUserId(@Param("userId") Long userId);
 }

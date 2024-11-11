@@ -1,6 +1,7 @@
 package com.splitwise.microservices.expense_service.controller;
 
 import com.splitwise.microservices.expense_service.entity.Settlement;
+import com.splitwise.microservices.expense_service.model.SettlementInsight;
 import com.splitwise.microservices.expense_service.model.SettlementResponse;
 import com.splitwise.microservices.expense_service.service.SettlementService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +63,15 @@ public class SettlementController {
 
         SettlementResponse settlement = settlementService.getSettlementDetailsByID(settlementId, userId);
         return new ResponseEntity<>(settlement,HttpStatus.OK);
+    }
+    @GetMapping("/getSettlementInsights/{userId}")
+    public ResponseEntity<SettlementInsight> getSettlementInsightsData(@PathVariable("userId") Long userId){
+        if(userId == null)
+        {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        SettlementInsight settlementInsight = settlementService.getSettlementInsightsDataByUserId(userId);
+        return new ResponseEntity<>(settlementInsight,HttpStatus.OK);
     }
 
     @PutMapping("/updateSettlement")
